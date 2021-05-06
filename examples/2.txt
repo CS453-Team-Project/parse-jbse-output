@@ -1,0 +1,133 @@
+.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1.39[3980] 
+Leaf state
+Path condition: 
+	{R0} == Object[4326] (fresh) &&
+	({V0}) < (4) &&
+	(0) < ({V0}) &&
+	{R1} == Object[4329] (fresh) &&
+	({V2}) >= (0) &&
+	(0) < ({V2}) &&
+	({V5}) >= (-128) &&
+	({V5}) <= (127) &&
+	({V5}) + (128) == (0) &&
+	(1) < ({V0}) &&
+	(1) < ({V2}) &&
+	({V6}) >= (-128) &&
+	({V6}) <= (127) &&
+	({V6}) + (128) == (0) &&
+	(2) < ({V0}) &&
+	(2) < ({V2}) &&
+	({V7}) >= (-128) &&
+	({V7}) <= (127) &&
+	({V7}) + (128) == (132)
+	where:
+	{R0} == {ROOT}:this &&
+	{V0} == {ROOT}:number &&
+	{R1} == {ROOT}:longs &&
+	{V2} == {ROOT}:longs.length &&
+	{V5} == {ROOT}:longs[0] &&
+	{V6} == {ROOT}:longs[1] &&
+	{V7} == {ROOT}:longs[2]
+Static store: {
+	Class[(0, java/lang/Integer)]: {
+		Origin: [java/lang/Integer]
+		Field[0]: Name: TYPE, Type: Ljava/lang/Class;, Value: Object[494] (type: L)
+		Field[1]: Name: MAX_VALUE, Type: I, Value: 2147483647 (type: I)
+		Field[2]: Name: digits, Type: [C, Value: Object[1889] (type: L)
+		Field[3]: Name: sizeTable, Type: [I, Value: Object[1892] (type: L)
+		Field[4]: Name: serialVersionUID, Type: J, Value: 1360826667806852920L (type: J)
+		Field[5]: Name: MIN_VALUE, Type: I, Value: -2147483648 (type: I)
+		Field[6]: Name: SIZE, Type: I, Value: 32 (type: I)
+		Field[7]: Name: BYTES, Type: I, Value: 4 (type: I)
+		Field[8]: Name: DigitTens, Type: [C, Value: Object[1890] (type: L)
+		Field[9]: Name: DigitOnes, Type: [C, Value: Object[1891] (type: L)
+	}
+	Class[(0, java/util/ArrayList)]: {
+		Origin: [java/util/ArrayList]
+		Field[0]: Name: serialVersionUID, Type: J, Value: 8683452581122892189L (type: J)
+		Field[1]: Name: MAX_ARRAY_SIZE, Type: I, Value: 2147483639 (type: I)
+		Field[2]: Name: DEFAULT_CAPACITY, Type: I, Value: 10 (type: I)
+		Field[3]: Name: EMPTY_ELEMENTDATA, Type: [Ljava/lang/Object;, Value: Object[2430] (type: L)
+		Field[4]: Name: DEFAULTCAPACITY_EMPTY_ELEMENTDATA, Type: [Ljava/lang/Object;, Value: Object[2431] (type: L)
+	}
+}
+Heap: {
+	Object[1895]: {
+		Class: (0,java/lang/Integer)
+		Field[0]: Name: value, Type: I, Value: -128 (type: I)
+	}
+	Object[2027]: {
+		Class: (0,java/lang/Integer)
+		Field[0]: Name: value, Type: I, Value: 4 (type: I)
+	}
+	Object[4326]: {
+		Origin: {ROOT}:this
+		Class: (2,com/cs453/group5/examples/Calculator)
+	}
+	Object[4327]: {
+		Class: (0,java/util/ArrayList)
+		Field[0]: Name: modCount, Type: I, Value: 3 (type: I)
+		Field[1]: Name: elementData, Type: [Ljava/lang/Object;, Value: Object[4330] (type: L)
+		Field[2]: Name: size, Type: I, Value: 3 (type: I)
+	}
+	Object[4328]: {
+		Origin: {ROOT}:longs (initial)
+		Type: (0,[I)
+		Length: {V2}
+		Items: {
+			({INDEX-1591058047}) >= (0) && ({INDEX-1591058047}) < ({V2}) && ({INDEX-1591058047}) == (0) -> {V5}
+			({INDEX-1591058047}) >= (0) && ({INDEX-1591058047}) < ({V2}) && ({INDEX-1591058047}) == (1) -> {V6}
+			({INDEX-1591058047}) >= (0) && ({INDEX-1591058047}) < ({V2}) && ({INDEX-1591058047}) == (2) -> {V7}
+			(no assumption on other values)
+		}
+	}
+	Object[4329]: {
+		Origin: {ROOT}:longs
+		Type: (0,[I)
+		Length: {V2}
+		Items: {
+			({INDEX-873491932}) >= (0) && ({INDEX-873491932}) < ({V2}) -> Object[4328][_ + 0]
+		}
+	}
+	Object[4330]: {
+		Type: (0,[Ljava/lang/Object;)
+		Length: 10
+		Items: {Object[1895], Object[1895], Object[2027], null, null, null, null, null, null, null}
+	}
+	
+}
+Stack: {
+	Frame[0]: {
+		Method signature: com/cs453/group5/examples/Calculator:(I[I)I:getSign
+		Program counter: 82
+		Program counter after return: 85
+		Next bytecode: INVOKESTATIC jbse/meta/Analysis:(Z)V:assume [2]
+		Source line: (19): <UNKNOWN>
+		Operand Stack: {
+			
+		}
+		Local Variables: {
+			Variable[0]: Name: this, Type: Lcom/cs453/group5/examples/Calculator;, Value: {R0} == Object[4326] (type: L)
+			Variable[1]: Name: number, Type: I, Value: {V0} (type: I)
+			Variable[2]: Name: longs, Type: [I, Value: {R1} == Object[4329] (type: L)
+			Variable[3]: Name: longsAL, Type: Ljava/util/ArrayList;, Value: Object[4327] (type: L)
+			Variable[4]: Name: q, Type: I, Value: 2 (type: I)
+			Variable[5]: Name: n, Type: Ljava/lang/Integer;, Value: Object[2027] (type: L)
+			Variable[6]: Name: __LOCAL[6], Type: ?, Value: 0 (type: I)
+			Variable[7]: Name: __LOCAL[7], Type: ?, Value: 5 (type: I)
+		}
+	}
+	Frame[1]: {
+		Method signature: jbse/meta/Analysis:(Z)V:assume
+		Program counter: 4
+		Program counter after return: <UNKNOWN>
+		Next bytecode: INVOKESTATIC jbse/meta/Analysis:()V:ignore [104]
+		Source line: (80): <UNKNOWN>
+		Operand Stack: {
+			
+		}
+		Local Variables: {
+			Variable[0]: Name: b, Type: Z, Value: false (type: Z)
+		}
+	}	
+}

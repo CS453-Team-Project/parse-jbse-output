@@ -1,0 +1,54 @@
+.1.1.1.1.1.1.1.1.1.1.1.1.1.1.1[1882] 
+Leaf state, returned value: 1
+Path condition: 
+	{R0} == Object[4326] (fresh) &&
+	({V0}) < (4) &&
+	(0) < ({V0}) &&
+	{R1} == Object[4328] (fresh) &&
+	({V2}) >= (0) &&
+	(0) < ({V2}) &&
+	({V5}) - (4L) < (0L) &&
+	({V5}) - (2L) != (0L) &&
+	(1) < ({V0}) &&
+	(1) < ({V2}) &&
+	({V6}) - (4L) < (0L) &&
+	({V6}) - (2L) != (0L) &&
+	(2) < ({V0}) &&
+	(2) < ({V2}) &&
+	({V7}) - (4L) < (0L) &&
+	({V7}) - (2L) != (0L)
+	where:
+	{R0} == {ROOT}:this &&
+	{V0} == {ROOT}:number &&
+	{R1} == {ROOT}:longs &&
+	{V2} == {ROOT}:longs.length &&
+	{V5} == {ROOT}:longs[0] &&
+	{V6} == {ROOT}:longs[1] &&
+	{V7} == {ROOT}:longs[2]
+Static store: {
+}
+Heap: {
+	Object[4326]: {
+		Origin: {ROOT}:this
+		Class: (2,com/cs453/group5/examples/Calculator)
+	}
+	Object[4327]: {
+		Origin: {ROOT}:longs (initial)
+		Type: (0,[J)
+		Length: {V2}
+		Items: {
+			({INDEX-134260546}) >= (0) && ({INDEX-134260546}) < ({V2}) && ({INDEX-134260546}) == (0) -> {V5}
+			({INDEX-134260546}) >= (0) && ({INDEX-134260546}) < ({V2}) && ({INDEX-134260546}) == (1) -> {V6}
+			({INDEX-134260546}) >= (0) && ({INDEX-134260546}) < ({V2}) && ({INDEX-134260546}) == (2) -> {V7}
+			(no assumption on other values)
+		}
+	}
+	Object[4328]: {
+		Origin: {ROOT}:longs
+		Type: (0,[J)
+		Length: {V2}
+		Items: {
+			({INDEX-1240505551}) >= (0) && ({INDEX-1240505551}) < ({V2}) -> Object[4327][_ + 0]
+		}
+	}
+}
