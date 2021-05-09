@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import re
 
 from .symbol import JBSESymbolRef
+from .symbol_manager import symmgr
 
 
 class PathConditionClause(ABC):
@@ -48,7 +49,7 @@ class PathConditionClauseAssumeExpands(PathConditionClause):
         if matched is None:
             return None
         return PathConditionClauseAssumeExpands(
-            JBSESymbolRef(int(matched.group(1))), int(matched.group(2))
+            symmgr.get("R", int(matched.group(1))), int(matched.group(2))
         )
 
     def __repr__(self) -> str:
@@ -75,7 +76,7 @@ class PathConditionClauseAssumeNull(PathConditionClause):
         matched = re.search(pattern, string)
         if matched is None:
             return None
-        return PathConditionClauseAssumeExpands(JBSESymbolRef(int(matched.group(1))))
+        return PathConditionClauseAssumeExpands(symmgr.get("R", int(matched.group(1))))
 
     def __repr__(self) -> str:
         return f"{repr(self.sym_ref)} == null"

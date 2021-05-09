@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
+from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Tuple, Union, Optional
+from typing import Any, Tuple, Union, Optional, Literal, Sequence
 import re
 
-from ..java.value import JavaValue
-from ..java.type import JavaType
+from ..java.value import JavaValue, JavaValueSymbolic
+from ..java.type import *
 from .symbol import JBSESymbol
 
 
@@ -140,13 +141,29 @@ class JBSEHeapValueArray(JBSEHeapValue):
         matched = re.search(origin_pattern, string)
         origin = None if matched is None else origin_pattern.group(1)
 
+        length = JavaValue.parse(length)
+
+        array_type = JavaType.parse(type_desc_name)
+        assert type(array_type) == JavaTypeArray
+        array_inner_type = array_type.inner
+
+        # symbolic length
+        if type(length) == JavaValueSymbolic:
+            length.symbol.type = JavaTypeInt()
+            
+        # symbolic array items
+        for item in items:
+            if type(item.value) == JavaValueSymbolic:
+                item.value.symbol.type = deepcopy(array_inner_type)
+
         return JBSEHeapValueArray(
-            index,
-            origin,
-            (int(type_desc_index), type_desc_name),
-            JavaValue.parse(length),
-            items,
-        )
+                index,
+                origin,
+                (int(type_desc_index), type_desc_name),
+                length,
+                items,
+            )
+            
 
 
 @dataclass

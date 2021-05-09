@@ -1,5 +1,8 @@
 from abc import ABC, abstractmethod
 import re
+from typing import Optional, Literal
+
+from src.java.type import JavaType
 
 
 class JBSESymbol(ABC):
@@ -23,11 +26,12 @@ class JBSESymbol(ABC):
 
 
 class JBSESymbolRef(JBSESymbol):
-    def __init__(self, index: int):
+    def __init__(self, index: int, sym_type: Optional[JavaType] = None):
         self.index = index
+        self.type = sym_type
 
     def __repr__(self) -> str:
-        return f"{{R{self.index}}}"
+        return f"{{R{self.index}}}{'?' if self.type is None else repr(self.type)}"
 
     @staticmethod
     def parse(string: str):
@@ -39,11 +43,12 @@ class JBSESymbolRef(JBSESymbol):
 
 
 class JBSESymbolValue(JBSESymbol):
-    def __init__(self, index: int):
+    def __init__(self, index: int, sym_type: Optional[JavaType] = None):
         self.index = index
+        self.type = sym_type
 
     def __repr__(self) -> str:
-        return f"{{V{self.index}}}"
+        return f"{{V{self.index}}}{'?' if self.type is None else repr(self.type)}"
 
     @staticmethod
     def parse(string: str):

@@ -6,6 +6,7 @@ import re
 
 from .type import *
 from ..jbse.symbol import JBSESymbol
+from ..jbse.symbol_manager import symmgr
 
 
 class JavaValue(ABC):
@@ -33,7 +34,7 @@ class JavaValueSymbolic(JavaValue):
     @staticmethod
     def parse(string: str, type_desc: Optional[str] = None):
         try:
-            return JavaValueSymbolic(JBSESymbol.parse(string))
+            return JavaValueSymbolic(symmgr.get_parse(string))
         except:
             return None
 
