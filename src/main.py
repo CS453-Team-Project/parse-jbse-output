@@ -125,61 +125,61 @@ class JBSEPath:
 
         return JBSEPath(pathname, ret_val, symmap, clauses, heap)
 
-    def solve(self):
-        # assumption: .parse was called beforehand
+    # def solve(self):
+    #     # assumption: .parse was called beforehand
 
-        z3Vars = {}
+    #     z3Vars = {}
 
-        for clause in self.clauses:
-            if type(clause) != PathConditionClauseAssume:
-                continue
+    #     for clause in self.clauses:
+    #         if type(clause) != PathConditionClauseAssume:
+    #             continue
 
-            # TODO!!!!!!!!
-            # TODO!!!!!!!!
-            # TODO!!!!!!!!
-            # TODO!!!!!!!!
-            # TODO!!!!!!!!
-            # TODO!!!!!!!!
-            # TODO!!!!!!!!
-            # TODO!!!!!!!!
+    #         # TODO!!!!!!!!
+    #         # TODO!!!!!!!!
+    #         # TODO!!!!!!!!
+    #         # TODO!!!!!!!!
+    #         # TODO!!!!!!!!
+    #         # TODO!!!!!!!!
+    #         # TODO!!!!!!!!
+    #         # TODO!!!!!!!!
 
 
-            clause = '({V6}) >= (-128)'
-
-            
-
-            pass
-
-        def java_type_to_z3(java_type: JavaType):
-            if java_type == JavaTypeBoolean():
-                return z3.Bool
-            if java_type == JavaTypeByte():
-                return z3.
-            # BitVecVal(-1, 16)
-            if java_type == JavaTypeChar():
-                return lambda x: z3.BitVec(x, 8)
-            if java_type == JavaTypeDouble():
-                return lambda x: z3.FP(x, z3.FloatDouble())
-            if java_type == JavaTypeFloat():
-                return lambda x: z3.FP(x, z3.FloatSingle())
-            if java_type == JavaTypeInt():
-                return z3.Int # z3.Int
-            if java_type == JavaTypeLong():
-                return z3.Int # 
-
-            raise ValueError("Invalid Java type generating a Z3 variable")
-            
-        assume_clauses = [
-            eval(re.sub("(\{V\d+\})", "z3Vars['\\1']", clause))
-            for clause in self.clauses
-            if type(clause) == PathConditionClauseAssume
-        ]
-        z3.solve(*parsed_clauses)
+    #         clause = '({V6}) >= (-128)'
 
 
 
-        pass
-        
+    #         pass
+
+    #     def java_type_to_z3(java_type: JavaType):
+    #         if java_type == JavaTypeBoolean():
+    #             return z3.Bool
+    #         if java_type == JavaTypeByte():
+    #             return z3.
+    #         # BitVecVal(-1, 16)
+    #         if java_type == JavaTypeChar():
+    #             return lambda x: z3.BitVec(x, 8)
+    #         if java_type == JavaTypeDouble():
+    #             return lambda x: z3.FP(x, z3.FloatDouble())
+    #         if java_type == JavaTypeFloat():
+    #             return lambda x: z3.FP(x, z3.FloatSingle())
+    #         if java_type == JavaTypeInt():
+    #             return z3.Int # z3.Int
+    #         if java_type == JavaTypeLong():
+    #             return z3.Int #
+
+    #         raise ValueError("Invalid Java type generating a Z3 variable")
+
+    #     assume_clauses = [
+    #         eval(re.sub("(\{V\d+\})", "z3Vars['\\1']", clause))
+    #         for clause in self.clauses
+    #         if type(clause) == PathConditionClauseAssume
+    #     ]
+    #     z3.solve(*parsed_clauses)
+
+
+
+    #     pass
+
 if __name__ == "__main__":
     # with open("examples/2.txt", "r") as f:
     #     pprint.pprint \
@@ -197,7 +197,7 @@ if __name__ == "__main__":
     # z3VarV2 = Int('{V2}')
     z3Vars = {}
     for (name, type_desc) in symbols:
-        z3Vars[name] = Int(f"{{{name}}}")
+        z3Vars[name] = z3.Int(f"{{{name}}}")
 
     clauses = [
         "({V0}) < (4)",
@@ -222,5 +222,5 @@ if __name__ == "__main__":
         eval(re.sub("\{(V\d+)\}", "z3Vars['\\1']", clause)) for clause in clauses
     ]
 
-    
-    solve(*parsed_clauses)
+
+    z3.solve(*parsed_clauses)
