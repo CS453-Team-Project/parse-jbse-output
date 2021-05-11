@@ -48,40 +48,47 @@ class JavaValueSimple(JavaValue):
     def parse(string: str, type_desc: Optional[str] = None):
         # TODO: object, NaN and ±Infinities are not implemented
         # null
-        if type_desc not in list("ZBDFICJ") and string == "null":
+        if type_desc not in list("ZBDFSICJ") and string == "null":
             # FIXME: type? value?
-            return JavaValueSimple(JavaTypeClass(type_desc or "java/lang/Object"), None)
+            return JavaValueSimple(
+                JavaType.parse(type_desc)
+                if type_desc is not None
+                else JavaTypeClass("java/lang/Object"),
+                None,
+            )
         # boolean
-        if (type_desc in ["Z", None]) and (string in ["true", "false"]) is not None:
+        if (type_desc in ["Z", None]) and (string in ["true", "false"]):
             return JavaValueSimple(JavaTypeBoolean(), string == "true")
         # byte
         if (type_desc in ["B", None]) and (
-            type_descmatched := re.search("^\(byte\) (-?(\d+))$", string)
+            type_descmatched := re.search(r"^\(byte\) (-?(\d+))$", string)
         ) is not None:
             return JavaValueSimple(JavaTypeByte(), int(matched.group(1)))
         # double
         if (type_desc in ["D", None]) and (
-            matched := re.search("^(-?(\d+)(.(\d*))?)d$", string)
+            matched := re.search(r"^(-?(\d+)(.(\d*))?)d$", string)
         ) is not None:
             return JavaValueSimple(JavaTypeDouble(), float(matched.group(1)))
         # float
         if (type_desc in ["F", None]) and (
-            matched := re.search("^(-?(\d+)(.(\d*))?)f$", string)
+            matched := re.search(r"^(-?(\d+)(.(\d*))?)f$", string)
         ) is not None:
             return JavaValueSimple(JavaTypeFloat(), float(matched.group(1)))
         # int
         if (type_desc in ["I", None]) and (
-            matched := re.search("^(-?(\d+))$", string)
+            matched := re.search(r"^(-?(\d+))$", string)
         ) is not None:
             return JavaValueSimple(JavaTypeInt(), int(matched.group(1)))
         # char
         if (type_desc in ["C", None]) and (
-            matched := re.search("^(.)$", string)
+            matched := re.search(r"^(\\u0000|.)$", string)
         ) is not None:
-            return JavaValueSimple(JavaTypeChar(), int(matched.group(1)))
+            return JavaValueSimple(
+                JavaTypeChar(), 0 if string == "\\u0000" else ord(matched.group(1))
+            )
         # long
         if (type_desc in ["J", None]) and (
-            matched := re.search("^(-?(\d+))L$", string)
+            matched := re.search(r"^(-?(\d+))L$", string)
         ) is not None:
             return JavaValueSimple((JavaTypeLong()), int(matched.group(1)))
 

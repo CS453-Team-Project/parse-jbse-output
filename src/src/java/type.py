@@ -8,7 +8,7 @@ class JavaType(ABC):
     def parse_method_signature(
         sig: str,
     ) -> Optional[Tuple[Sequence["JavaType"], "JavaType"]]:
-        matched = re.match("\((.*)\)(.*)$", sig)
+        matched = re.match(r"\((.*)\)(.*)$", sig)
         if matched is None:
             return None
 
@@ -32,12 +32,13 @@ class JavaType(ABC):
             "C": JavaTypeChar,
             "D": JavaTypeDouble,
             "F": JavaTypeFloat,
+            "S": JavaTypeShort,
             "I": JavaTypeInt,
             "J": JavaTypeLong,
         }
 
         if type_desc[0] == "[":
-            matched = re.match("(V|Z|B|C|D|F|I|J|L(.*?);)", type_desc[1:])
+            matched = re.match(r"(V|Z|B|C|D|F|S|I|J|L(.*?);)", type_desc[1:])
             if not matched:
                 return None
 
@@ -56,7 +57,7 @@ class JavaType(ABC):
 
             return [JavaTypeArray(JavaTypeClass(matched.group(2))), *tail_call]
 
-        matched = re.match("(V|Z|B|C|D|F|I|J|L(.*?);)", type_desc)
+        matched = re.match(r"(V|Z|B|C|D|F|S|I|J|L(.*?);)", type_desc)
         if not matched:
             return None
 
@@ -88,6 +89,7 @@ class JavaType(ABC):
             JavaTypeChar,
             JavaTypeDouble,
             JavaTypeFloat,
+            JavaTypeShort,
             JavaTypeInt,
             JavaTypeLong,
         ]:
@@ -130,6 +132,11 @@ class JavaTypeDouble(JavaType):
 class JavaTypeFloat(JavaType):
     def __repr__(self):
         return "F"
+
+
+class JavaTypeShort(JavaType):
+    def __repr__(self):
+        return "S"
 
 
 class JavaTypeInt(JavaType):

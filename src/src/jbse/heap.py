@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Tuple, Union, Optional, Literal, Sequence
+from typing import Any, Tuple, Union, Optional, Literal, Sequence, Callable
 import re
 
 from ..java.value import JavaValue, JavaValueSymbolic
@@ -26,7 +26,7 @@ class JBSEHeapValue(ABC):
 class JBSEHeapValueArrayItem:
     def __init__(
         self,
-        index: int,
+        index: Union[int, Callable[[int], int]],
         value: Union[JavaValue, Tuple[int, str]],
     ):
         self.index = index
@@ -41,7 +41,7 @@ class JBSEHeapValueArrayItem:
         )
 
     @staticmethod
-    def parse(string: str) -> list:
+    def parse(string: str, type_desc: Optional[str] = None) -> list:
         """
         Typical form of input will be
         `Object[1895], Object[1895], Object[2027], null, null, null, null, null, null, null`
@@ -49,13 +49,13 @@ class JBSEHeapValueArrayItem:
         `({INDEX-1591058047}) >= (0) && ({INDEX-1591058047}) < ({V2}) && ({INDEX-1591058047}) == (0) -> {V5}`
         """
 
-        if re.search("^\(no assumption on (other )?values\)$", string):
+        if re.search(r"^\(no assumption on (other )?values\)$", string):
             return None
 
         if " -> " not in string:
             # Object[1895], Object[1895], Object[2027], null, null, null, ...
             return [
-                JBSEHeapValueArrayItem(i, JavaValue.parse(s.strip()))
+                JBSEHeapValueArrayItem(i, JavaValue.parse(s.strip(), type_desc))
                 for (i, s) in enumerate(string.split(","))
             ]
 
@@ -73,14 +73,14 @@ class JBSEHeapValueArrayItem:
         )
         if index is not None:
             # ({INDEX-??}) == (<index>) -> <value>
-            return [JBSEHeapValueArrayItem(index, JavaValue.parse(value))]
+            return [JBSEHeapValueArrayItem(index, JavaValue.parse(value, type_desc))]
 
         # <misc assumptions> -> ???
         # if ??? is of the form Object[<heap pos>][some lambda]
         matched = re.search(r"Object\[(\d+)\]\[((.*?)_(.*?))\]$", value)
         if matched is not None:
             heap_pos = int(matched.group(1))
-            return [JBSEHeapValueArrayItem(index, JavaValue.parse(value))]
+            return [JBSEHeapValueArrayItem(index, JavaValue.parse(value, type_desc))]
 
         raise ValueError("Not supported")
 
@@ -129,17 +129,10 @@ class JBSEHeapValueArray(JBSEHeapValue):
             items_str,
             _,
         ) = matched.groups()
-        items = [
-            a
-            for item in items_str.split("\n")
-            if (stripped := item.strip()) != ""
-            if (array_item := JBSEHeapValueArrayItem.parse(stripped)) is not None
-            for a in array_item
-        ]
 
-        origin_pattern = r"\t+Origin: (.*?)\s\n"
+        origin_pattern = r"\s+Origin: (.*?)\s*\n"
         matched = re.search(origin_pattern, string)
-        origin = None if matched is None else origin_pattern.group(1)
+        origin = None if matched is None else matched.group(1)
 
         length = JavaValue.parse(length)
 
@@ -147,23 +140,33 @@ class JBSEHeapValueArray(JBSEHeapValue):
         assert type(array_type) == JavaTypeArray
         array_inner_type = array_type.inner
 
+        items = [
+            a
+            for item in items_str.split("\n")
+            if (stripped := item.lstrip()) != ""
+            if (
+                array_item := JBSEHeapValueArrayItem.parse(stripped, type_desc_name[1:])
+            )
+            is not None
+            for a in array_item
+        ]
+
         # symbolic length
         if type(length) == JavaValueSymbolic:
             length.symbol.type = JavaTypeInt()
-            
+
         # symbolic array items
         for item in items:
             if type(item.value) == JavaValueSymbolic:
                 item.value.symbol.type = deepcopy(array_inner_type)
 
         return JBSEHeapValueArray(
-                index,
-                origin,
-                (int(type_desc_index), array_type),
-                length,
-                items,
-            )
-            
+            index,
+            origin,
+            (int(type_desc_index), array_type),
+            length,
+            items,
+        )
 
 
 @dataclass

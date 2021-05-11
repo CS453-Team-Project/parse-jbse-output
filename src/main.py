@@ -1,5 +1,6 @@
 import argparse
 from dataclasses import dataclass
+from itertools import chain, combinations
 from typing import Tuple, Optional, Any, Union, Sequence
 import re
 
@@ -79,7 +80,7 @@ class JBSEPath:
 
             # set parameter types
             if key.startswith("{ROOT}:"):
-                if re.match("^[A-Za-z0-9$_]*$", key[len("{ROOT}:") :]):
+                if re.match(r"^[A-Za-z0-9$_]*$", key[len("{ROOT}:") :]):
                     field = key[len("{ROOT}:") :]
                     if field == "this":
                         symbol.type = JavaTypeClass(aux.methods[0][0])
@@ -91,18 +92,6 @@ class JBSEPath:
         symmap = dict(
             [parse_symmap_entry(entry.strip()) for entry in symmap_str.split("&&")]
         )
-
-        # path condition
-        pathcond_pattern = r"Path condition:\s*\r?\n((.|\r|\n)*?)\r?\n\t*where:"
-        matched = re.search(pathcond_pattern, string)
-        if matched is None:
-            raise ValueError("Improper input")
-        pathcond_str = matched.group(1)
-
-        clauses = [
-            PathConditionClause.parse(entry.strip())
-            for entry in pathcond_str.split("&&")
-        ]
 
         # heap
         heap_pattern = r"Heap:\s*\{\s*\r?\n*((.|\r|\n)*?)\n\}"
@@ -116,11 +105,6 @@ class JBSEPath:
             heap[match.group(2)] = JBSEHeapValue.parse(match.group(1))
 
         # stack
-
-        # frame ->
-        # * method name
-        # * local vars: {R*} / {V*} -> type
-
         stack_pattern = r"Stack:\s*\{\s*\r?\n*((.|\r|\n)*?)\n\}"
         matched = re.search(stack_pattern, string)
         # it is possible to not have stack frame showing
@@ -143,73 +127,91 @@ class JBSEPath:
 
         # TODO: static store
 
+        # path condition
+        pathcond_pattern = r"Path condition:\s*\r?\n((.|\r|\n)*?)\r?\n\t*where:"
+        matched = re.search(pathcond_pattern, string)
+        if matched is None:
+            raise ValueError("Improper input")
+        pathcond_str = matched.group(1)
+
+        clauses = [
+            PathConditionClause.parse(entry.strip())
+            for entry in pathcond_str.split("&&")
+        ]
+
         return JBSEPath(pathname, ret_val, symmap, clauses, heap)
 
-    # def solve(self):
-    #     # assumption: .parse was called beforehand
+    @property
+    def z3_clauses(self):
+        return [c.cond for c in self.clauses if type(c) == PathConditionClauseAssume]
 
-    # preprocess clausses before expression parser
-    # WIDEN, NARROW
+    def solve(
+        self, num_models: int = 1
+    ) -> Tuple[
+        z3.Solver,
+        z3.CheckSatResult,  # sat, unknown, unsat
+        Sequence[Tuple[z3.ModelRef, Sequence[int]]],  # [(<model>, <unsat clauses>)]
+    ]:
+        # TODO: which clauses should be put into the z3 solver?
+        clauses = self.z3_clauses
 
-    # int
-    # boo - zero extension
+        s = z3.Solver()
+        s.add(*clauses)
 
-    # parse clauses using python expression parser
+        if s.check() == z3.unsat:
+            return (s, z3.unsat, [])
 
-    # use z3 to solve
+        if s.check() == z3.unknown:
+            return self.try_solve_unknown(clauses, num_models)
 
-    #     z3Vars = {}
+        models = get_n_models(s, num_models)
+        return (s, z3.sat, list(zip(models, [[]] * len(models))))
 
-    #     for clause in self.clauses:
-    #         if type(clause) != PathConditionClauseAssume:
-    #             continue
+    def try_solve_unknown(
+        self, clauses: Sequence[z3.BoolRef], num_models: int = 1
+    ) -> Tuple[
+        z3.Solver,
+        z3.CheckSatResult,  # sat, unknown, unsat
+        Sequence[Tuple[z3.ModelRef, Sequence[int]]],  # [(<model>, <unsat clauses>)]
+    ]:
+        # try reduce
+        print(
+            "There are some clauses that the Z3 cannot solve."
+            "Try reducing path conditions..."
+        )
 
-    #         # TODO!!!!!!!!
-    #         # TODO!!!!!!!!
-    #         # TODO!!!!!!!!
-    #         # TODO!!!!!!!!
-    #         # TODO!!!!!!!!
-    #         # TODO!!!!!!!!
-    #         # TODO!!!!!!!!
-    #         # TODO!!!!!!!!
+        result = []
+        s = z3.Solver()
 
-    #         clause = '({V6}) >= (-128)'
+        for excluded_indices in powerset(range(len(clauses))):
+            if len(excluded_indices) == 0 or len(excluded_indices) == len(clauses):
+                continue
 
-    #         pass
+            s.reset()
+            s.add(
+                *[clauses[i] for i in range(len(clauses)) if i not in excluded_indices]
+            )
 
-    #     def java_type_to_z3(java_type: JavaType):
-    #         if java_type == JavaTypeBoolean():
-    #             return z3.Bool
-    #         if java_type == JavaTypeByte():
-    #             return z3.
-    #         # BitVecVal(-1, 16)
-    #         if java_type == JavaTypeChar():
-    #             return lambda x: z3.BitVec(x, 8)
-    #         if java_type == JavaTypeDouble():
-    #             return lambda x: z3.FP(x, z3.FloatDouble())
-    #         if java_type == JavaTypeFloat():
-    #             return lambda x: z3.FP(x, z3.FloatSingle())
-    #         if java_type == JavaTypeInt():
-    #             return z3.Int # z3.Int
-    #         if java_type == JavaTypeLong():
-    #             return z3.Int #
+            if s.check() == z3.unsat:
+                # XXX: impossible
+                return (s, z3.unsat, [])
 
-    #         raise ValueError("Invalid Java type generating a Z3 variable")
+            if s.check() == z3.unknown:
+                continue
 
-    #     assume_clauses = [
-    #         eval(re.sub("(\{V\d+\})", "z3Vars['\\1']", clause))
-    #         for clause in self.clauses
-    #         if type(clause) == PathConditionClauseAssume
-    #     ]
-    #     z3.solve(*parsed_clauses)
+            models = get_n_models(s, num_models - len(result))
+            result.extend(zip(models, [excluded_indices] * len(models)))
 
-    #     pass
+            if len(result) >= num_models:
+                return (s, z3.unknown, result)
+
+        return (s, z3.unknown, result)
 
 
 # example
 # input: "java/sdlka/Calculator:sampleMethod:(I[Z)V:num:boolArr"
 # output: ('java/sdlka/Calculator', 'sampleMethod', {'num': I, 'boolArr': [Z}, V)
-def parse_method(method: str) -> list:
+def parse_method(method: str) -> list[Tuple[str, str, dict, JavaType]]:
     try:
         classname, methodname, method_sig, *param_names = method.split(":")
         param_types, ret_type = JavaType.parse_method_signature(method_sig)
@@ -221,20 +223,73 @@ def parse_method(method: str) -> list:
     return (classname, methodname, dict(zip(param_names, param_types)), ret_type)
 
 
+def powerset(iterable):
+    "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+    s = list(iterable)
+    return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
+
+
+def get_n_models(s: z3.Solver, num_models: int = 1) -> Sequence[z3.ModelRef]:
+    result = []
+
+    while len(result) < num_models and s.check() == z3.sat:
+        m = s.model()
+        result.append(m)
+        # Create a new constraint the blocks the current model
+        block = []
+        for d in m:
+            # d is a declaration
+            if d.arity() > 0:
+                continue
+            # create a constant from declaration
+            c = d()
+            if z3.is_array(c) or c.sort().kind() == z3.Z3_UNINTERPRETED_SORT:
+                continue
+            block.append(c != m[d])
+        s.add(z3.Or(block))
+
+    return result
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-t", "--target", required=True)
     parser.add_argument("-m", "--method", nargs="*")
+    parser.add_argument("-d", "--debug", action="store_true")
 
     args = parser.parse_args()
     methods = [parse_method(method) for method in args.method]
 
     with open(args.target, "r") as f:
+        content = "".join(f.readlines())
+
+    path = JBSEPath.parse(content, JBSEPathAux(methods))
+    if args.debug:
         pprint.pprint(
-            JBSEPath.parse("".join(f.readlines()), JBSEPathAux(methods)),
+            path,
             indent=4,
             compact=False,
         )
+
+    s, r, models = path.solve(num_models=4)
+    if r == z3.unsat:
+        # XXX: probably this is already filtered out from JBSE results.
+        print(f"The path {path.name} is unreachable.")
+    elif r == z3.unknown:
+        if models == []:
+            print(
+                "The Z3 did not solve any clauses!"
+                "So we have no information for this path."
+            )
+        else:
+            print("The path is partially satisfiable with the following model(s).")
+            for i, (m, u) in enumerate(models):
+                print(f"{i + 1}.", repr(m))
+                print("    Unsatisfied clauses: ", [path.z3_clauses[i] for i in u])
+    else:
+        print("The path is satisfiable with the following model(s).")
+        for i, (m, _) in enumerate(models):
+            print(f"{i + 1}.", repr(m))
 
     #
     # where
