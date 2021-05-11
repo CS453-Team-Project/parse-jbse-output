@@ -210,17 +210,13 @@ class JBSEPath:
 # input: "java/sdlka/Calculator:sampleMethod:(I[Z)V:num:boolArr"
 # output: ('java/sdlka/Calculator', 'sampleMethod', {'num': I, 'boolArr': [Z}, V)
 def parse_method(method: str) -> list:
-    split = method.split(":")
-
     try:
-        classname, methodname, method_sig = split[:3]
-        param_names = split[3:]
-
+        classname, methodname, method_sig, *param_names = method.split(":")
         param_types, ret_type = JavaType.parse_method_signature(method_sig)
 
         assert len(param_types) == len(param_names)
     except:
-        raise ValueError("invalid input")
+        raise ValueError("Invalid input.")
 
     return (classname, methodname, dict(zip(param_names, param_types)), ret_type)
 
@@ -231,13 +227,9 @@ if __name__ == "__main__":
     parser.add_argument("-m", "--method", nargs="*")
 
     args = parser.parse_args()
-
-    target = args.target
-
     methods = [parse_method(method) for method in args.method]
-    print(methods)
 
-    with open("examples/4.txt", "r") as f:
+    with open(args.target, "r") as f:
         pprint.pprint(
             JBSEPath.parse("".join(f.readlines()), JBSEPathAux(methods)),
             indent=4,

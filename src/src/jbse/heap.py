@@ -159,7 +159,7 @@ class JBSEHeapValueArray(JBSEHeapValue):
         return JBSEHeapValueArray(
                 index,
                 origin,
-                (int(type_desc_index), type_desc_name),
+                (int(type_desc_index), array_type),
                 length,
                 items,
             )
