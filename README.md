@@ -5,7 +5,7 @@ Python scripts to parse a JBSE output.
 
 ```sh
 $ python src/main.py -t "examples/5.txt" -m "com/cs453/group5/examples/Calculator:getSign:(J[CC)I:number:longs:b"
-The path is satisfiable with the following model(s).
+The path .1.1.2.1.1.1.1.1.1.1.1.1[5923] is satisfiable with the following model(s).
 1. [{V7} = 65487,
  {V6} = 65487,
  {V1} = 65495,
