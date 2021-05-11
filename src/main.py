@@ -282,12 +282,12 @@ if __name__ == "__main__":
                 "So we have no information for this path."
             )
         else:
-            print(f"The path {path.name} is partially satisfiable with the following model(s).")
+            print(f"The path {path.name} is partially satisfiable with the following model{'' if len(models) == 1 else 's'}.")
             for i, (m, u) in enumerate(models):
                 print(f"{i + 1}.", repr(m))
                 print("    Unsatisfied clauses: ", [path.z3_clauses[i] for i in u])
     else:
-        print(f"The path {path.name} is satisfiable with the following model(s).")
+        print(f"The path {path.name} is satisfiable with the following model{'' if len(models) == 1 else 's'}.")
         for i, (m, _) in enumerate(models):
             print(f"{i + 1}.", repr(m))
 
