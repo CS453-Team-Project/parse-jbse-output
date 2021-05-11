@@ -1,6 +1,6 @@
-from abc import ABC, abstractmethod
+import argparse
 from dataclasses import dataclass
-from typing import Tuple, Optional, Any, Union
+from typing import Tuple, Optional, Any, Union, Sequence
 import re
 
 import pprint
@@ -14,6 +14,13 @@ from src.jbse.symbol_manager import symmgr
 
 
 @dataclass
+class JBSEPathAux:
+    """Auxiliary data for JBSEPath."""
+
+    methods: Sequence[Tuple[str, str, dict, JavaType]]
+
+
+@dataclass
 class JBSEPath:
     name: str
     ret_val: Optional[str]  # TODO: parse ret val
@@ -21,7 +28,6 @@ class JBSEPath:
     clauses: list[PathConditionClause]
     heap: dict[int, JBSEHeapValue]
     # static_store: TODO
-    # stack: TODO
 
     def __repr__(self):
         symmap_str = ""
@@ -47,7 +53,7 @@ class JBSEPath:
         )
 
     @staticmethod
-    def parse(string: str):
+    def parse(string: str, aux: JBSEPathAux):
         # pathname
         pathname_pattern = r"((\.\d+)+\[\d+\])\s*\r?\nLeaf state"
         matched = re.search(pathname_pattern, string)
@@ -69,7 +75,18 @@ class JBSEPath:
 
         def parse_symmap_entry(entry: str) -> Tuple[JBSESymbol, str]:
             value_str, key = entry.split(" == ")
-            return (key, symmgr.get_parse(value_str))
+            symbol = symmgr.get_parse(value_str)
+
+            # set parameter types
+            if key.startswith("{ROOT}:"):
+                if re.match("^[A-Za-z0-9$_]*$", key[len("{ROOT}:") :]):
+                    field = key[len("{ROOT}:") :]
+                    if field == "this":
+                        symbol.type = JavaTypeClass(aux.methods[0][0])
+                    elif field in aux.methods[0][2]:
+                        symbol.type = aux.methods[0][2][field]
+
+            return (key, symbol)
 
         symmap = dict(
             [parse_symmap_entry(entry.strip()) for entry in symmap_str.split("&&")]
@@ -106,20 +123,23 @@ class JBSEPath:
 
         stack_pattern = r"Stack:\s*\{\s*\r?\n*((.|\r|\n)*?)\n\}"
         matched = re.search(stack_pattern, string)
-        if matched is None:
-            raise ValueError("Improper input")
-        stack_str = matched.group(1)
+        # it is possible to not have stack frame showing
+        if matched is not None:
+            stack_str = matched.group(1)
 
-        for match in re.finditer(r"(Frame\[\d+\]: \{(.|\r|\n)*?\n\t\})", stack_str):
-            # TODO: more information required to extract?
-            frame_str = match.group(1)
-            for var_match in re.finditer(r"Variable\[(\d+)\]: Name: (.*?), Type: (.*?), Value: (.*?)\s*(\(type: .*\))?\s*\n", frame_str):
-                sym_match = re.search(r"\{(R|V)(\d+)\}", var_match.group(4))
-                if sym_match is not None:
-                    ref_or_value = sym_match.group(1)
-                    index = int(sym_match.group(2))
-                    symbol = symmgr.get(ref_or_value, index)
-                    symbol.type = JavaType.parse(var_match.group(3))
+            for match in re.finditer(r"(Frame\[\d+\]: \{(.|\r|\n)*?\n\t\})", stack_str):
+                # TODO: more information required to extract?
+                frame_str = match.group(1)
+                for var_match in re.finditer(
+                    r"Variable\[(\d+)\]: Name: (.*?), Type: (.*?), Value: (.*?)\s*(\(type: .*\))?\s*\n",
+                    frame_str,
+                ):
+                    sym_match = re.search(r"\{(R|V)(\d+)\}", var_match.group(4))
+                    if sym_match is not None:
+                        ref_or_value = sym_match.group(1)
+                        index = int(sym_match.group(2))
+                        symbol = symmgr.get(ref_or_value, index)
+                        symbol.type = JavaType.parse(var_match.group(3))
 
         # TODO: static store
 
@@ -127,6 +147,16 @@ class JBSEPath:
 
     # def solve(self):
     #     # assumption: .parse was called beforehand
+
+    # preprocess clausses before expression parser
+    # WIDEN, NARROW
+
+    # int
+    # boo - zero extension
+
+    # parse clauses using python expression parser
+
+    # use z3 to solve
 
     #     z3Vars = {}
 
@@ -143,10 +173,7 @@ class JBSEPath:
     #         # TODO!!!!!!!!
     #         # TODO!!!!!!!!
 
-
     #         clause = '({V6}) >= (-128)'
-
-
 
     #         pass
 
@@ -176,51 +203,87 @@ class JBSEPath:
     #     ]
     #     z3.solve(*parsed_clauses)
 
-
-
     #     pass
 
+
+# example
+# input: "java/sdlka/Calculator:sampleMethod:(I[Z)V:num:boolArr"
+# output: ('java/sdlka/Calculator', 'sampleMethod', {'num': I, 'boolArr': [Z}, V)
+def parse_method(method: str) -> list:
+    split = method.split(":")
+
+    try:
+        classname, methodname, method_sig = split[:3]
+        param_names = split[3:]
+
+        param_types, ret_type = JavaType.parse_method_signature(method_sig)
+
+        assert len(param_types) == len(param_names)
+    except:
+        raise ValueError("invalid input")
+
+    return (classname, methodname, dict(zip(param_names, param_types)), ret_type)
+
+
 if __name__ == "__main__":
-    # with open("examples/2.txt", "r") as f:
-    #     pprint.pprint \
-    #     (JBSEPath.parse("".join(f.readlines())), \
-    #     indent=4, compact=False
-    #     )
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-t", "--target", required=True)
+    parser.add_argument("-m", "--method", nargs="*")
 
-    symbols = [
-        ("V0", JavaTypeInt()),
-        ("V2", JavaTypeInt()),
-        ("V5", JavaTypeInt()),
-        ("V6", JavaTypeInt()),
-        ("V7", JavaTypeInt())
-    ]
-    # z3VarV2 = Int('{V2}')
-    z3Vars = {}
-    for (name, type_desc) in symbols:
-        z3Vars[name] = z3.Int(f"{{{name}}}")
+    args = parser.parse_args()
 
-    clauses = [
-        "({V0}) < (4)",
-        "(0) < ({V0})",
-        "({V2}) >= (0)",
-        "(0) < ({V2})",
-        "({V5}) >= (-128)",
-        "({V5}) <= (127)",
-        "({V5}) + (128) == (0)",
-        "(1) < ({V0})",
-        "(1) < ({V2})",
-        "({V6}) >= (-128)",
-        "({V6}) <= (127)",
-        "({V6}) + (128) == (0)",
-        "(2) < ({V0})",
-        "(2) < ({V2})",
-        "({V7}) >= (-128)",
-        "({V7}) <= (127)",
-        "({V7}) + (128) == (132)"
-    ]
-    parsed_clauses = [
-        eval(re.sub("\{(V\d+)\}", "z3Vars['\\1']", clause)) for clause in clauses
-    ]
+    target = args.target
 
+    methods = [parse_method(method) for method in args.method]
+    print(methods)
 
-    z3.solve(*parsed_clauses)
+    with open("examples/4.txt", "r") as f:
+        pprint.pprint(
+            JBSEPath.parse("".join(f.readlines()), JBSEPathAux(methods)),
+            indent=4,
+            compact=False,
+        )
+
+    #
+    # where
+    # ...
+    # {V1} == Object[51321]:param
+
+    # Object[51321] -> type (class) -> access param type...
+
+    # symbols = [
+    #     ("V0", JavaTypeInt()),
+    #     ("V2", JavaTypeInt()),
+    #     ("V5", JavaTypeInt()),
+    #     ("V6", JavaTypeInt()),
+    #     ("V7", JavaTypeInt())
+    # ]
+    # # z3VarV2 = Int('{V2}')
+    # z3Vars = {}
+    # for (name, type_desc) in symbols:
+    #     z3Vars[name] = z3.Int(f"{{{name}}}")
+
+    # clauses = [
+    #     "({V0}) < (4)",
+    #     "(0) < ({V0})",
+    #     "({V2}) >= (0)",
+    #     "(0) < ({V2})",
+    #     "({V5}) >= (-128)",
+    #     "({V5}) <= (127)",
+    #     "({V5}) + (128) == (0)",
+    #     "(1) < ({V0})",
+    #     "(1) < ({V2})",
+    #     "({V6}) >= (-128)",
+    #     "({V6}) <= (127)",
+    #     "({V6}) + (128) == (0)",
+    #     "(2) < ({V0})",
+    #     "(2) < ({V2})",
+    #     "({V7}) >= (-128)",
+    #     "({V7}) <= (127)",
+    #     "({V7}) + (128) == (132)"
+    # ]
+    # parsed_clauses = [
+    #     eval(re.sub("\{(V\d+)\}", "z3Vars['\\1']", clause)) for clause in clauses
+    # ]
+
+    # z3.solve(*parsed_clauses)
