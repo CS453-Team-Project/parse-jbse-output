@@ -1,0 +1,18 @@
+.1.1[5] 
+Leaf state, returned value: 1
+Path condition: 
+	{R0} == Object[4326] (fresh) &&
+	({V0}) > (0.0d)
+	where:
+	{R0} == {ROOT}:this &&
+	{V0} == {ROOT}:number
+Static store: {
+	
+}
+Heap: {
+	Object[4326]: {
+		Origin: {ROOT}:this
+		Class: (2,com/cs453/group5/examples/Calculator)
+	}
+	
+}
