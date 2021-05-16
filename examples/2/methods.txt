@@ -1,1 +1,1 @@
-com/cs453/group5/examples/Calculator:getSign:(D)I:s
+com/cs453/group5/examples/Calculator:getSign:(D)I:number
