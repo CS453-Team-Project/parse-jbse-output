@@ -1,4 +1,5 @@
 import argparse
+import os
 from typing import Tuple, Sequence
 
 import pprint
@@ -9,8 +10,14 @@ from src.jbse.path import JBSEPath, JBSEPathAux
 from src.util.arg import parse_method
 
 
+curr_dir = os.getcwd()
+NUM_MODELS = 10
+
+
 def main(target: str, methods: Sequence[str], num_models: int, debug: bool = False):
     methods = [parse_method(method) for method in methods]
+
+    print(methods)
 
     with open(target, "r") as f:
         content = "".join(f.readlines())
@@ -63,13 +70,33 @@ def log(
 
 
 if __name__ == "__main__":
-    print('\n\n\n$ python src/main.py -t "examples/6.txt" -m "com/cs453/group5/examples/Calculator:myFunction:(J[CI)I:number:longs:b"')
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-t", "--target", required=True)
-    parser.add_argument("-m", "--method", nargs="*")
-    parser.add_argument("-n", "--nmodels")
-    parser.add_argument("-d", "--debug", action="store_true")
+    # print('\n\n\n$ python src/main.py -t "examples/6.txt" -m "com/cs453/group5/examples/Calculator:myFunction:(J[CI)I:number:longs:b"')
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument("-t", "--target", required=True)
+    # parser.add_argument("-m", "--method", nargs="*")
+    # parser.add_argument("-n", "--nmodels")
+    # parser.add_argument("-d", "--debug", action="store_true")
 
-    args = parser.parse_args()
-    log(*main(args.target, args.method, args.nmodels or 4, args.debug))
-    print('\n\n\n')
+    # args = parser.parse_args()
+    # log(*main(args.target, args.method, args.nmodels or 4, args.debug))
+    # print('\n\n\n')
+
+    with open(os.path.join(curr_dir, "examples/1/methods.txt"), "r") as f:
+        methods = [r.strip() for r in f.readlines()]
+
+    path, s, r, models = main(
+        os.path.join(curr_dir, "examples/1/path2.txt"),
+        methods,
+        NUM_MODELS,
+    )
+
+    print("Symmap")
+    pprint.pprint(path.symmap)
+
+    print(z3.simplify(z3.And(*path.z3_clauses)))
+
+
+    # assertions = s.assertions()
+    # print([assertions[i] for i in range(len(assertions))])
+    # print(z3.simplify(s.assertions()))
+    # print(models)

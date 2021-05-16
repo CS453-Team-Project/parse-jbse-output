@@ -24,7 +24,7 @@ class JBSEPathAux:
 class JBSEPath:
     name: str
     ret_val: Optional[str]  # TODO: parse ret val
-    symmap: dict[str, JBSESymbol]  # TODO: parse value type of symmap
+    symmap: dict[Sequence[Tuple[str, str]], JBSESymbol]  # TODO: parse value type of symmap
     clauses: list[PathConditionClause]
     heap: dict[int, JBSEHeapValue]
     # static_store: TODO
@@ -73,20 +73,20 @@ class JBSEPath:
             raise ValueError("Improper input")
         symmap_str = matched.group(1)
 
-        def parse_symmap_entry(entry: str) -> Tuple[JBSESymbol, str]:
+        def parse_symmap_entry(entry: str) -> Tuple[Sequence[Tuple[Optional[str], str]], JBSESymbol]:
             value_str, key = entry.split(" == ")
             symbol = symmgr.get_parse(value_str)
 
             # set parameter types
-            if key.startswith("{ROOT}:"):
-                if re.match(r"^[A-Za-z0-9$_]*$", key[len("{ROOT}:") :]):
-                    field = key[len("{ROOT}:") :]
-                    if field == "this":
-                        symbol.type = JavaTypeClass(aux.methods[0][0])
-                    elif field in aux.methods[0][2]:
-                        symbol.type = aux.methods[0][2][field]
+            # e.g., key = "{ROOT}:s.java/lang/String:value.length"
 
-            return (key, symbol)
+            # parameters = [('{ROOT}', 's'), ('java/lang/String', 'value'), (None, 'length')]
+            parameters = [
+                (a[0], a[1]) if len(a) >= 2 else (None, a[0])
+                for a in [s.split(":") for s in key.split(".")]
+            ]
+
+            return (tuple(parameters), symbol)
 
         symmap = dict(
             [parse_symmap_entry(entry.strip()) for entry in symmap_str.split("&&")]
@@ -101,7 +101,7 @@ class JBSEPath:
 
         heap = {}
         for match in re.finditer(r"(Object\[(\d+)\]: \{(.|\r|\n)*?\n\t\})", heap_str):
-            heap[match.group(2)] = JBSEHeapValue.parse(match.group(1))
+            heap[match.group(2)] = JBSEHeapValue.parse(match.group(1), symmap)
 
         # stack
         stack_pattern = r"Stack:\s*\{\s*\r?\n*((.|\r|\n)*?)\n\}"

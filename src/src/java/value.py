@@ -33,6 +33,16 @@ class JavaValueSymbolic(JavaValue):
 
     @staticmethod
     def parse(string: str, type_desc: Optional[str] = None):
+        pattern = r"== Object\[\d+\]$"
+        matched = re.search(pattern, string)
+        if matched is not None:
+            string = re.sub(pattern, "", string).strip()
+
+            try:
+                return JavaValueSymbolic(symmgr.get_parse(string))
+            except:
+                pass
+
         try:
             return JavaValueSymbolic(symmgr.get_parse(string))
         except:
