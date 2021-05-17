@@ -34,12 +34,19 @@ z3_op_to_str = {
     Z3_OP_XOR: "^",
     Z3_OP_NOT: "!",
     Z3_OP_IMPLIES: "Implies",
+    Z3_OP_ADD: "+",
+    Z3_OP_SUB: "-",
+    Z3_OP_MUL: "*",
     Z3_OP_IDIV: "/",
     Z3_OP_MOD: "%",
     Z3_OP_TO_REAL: "ToReal",
     Z3_OP_TO_INT: "ToInt",
     Z3_OP_POWER: "**",
     Z3_OP_IS_INT: "IsInt",
+    Z3_OP_LE: "<=",
+    Z3_OP_LT: "<",
+    Z3_OP_GE: ">=",
+    Z3_OP_GT: ">",
     Z3_OP_BADD: "+",
     Z3_OP_BSUB: "-",
     Z3_OP_BMUL: "*",
@@ -71,6 +78,7 @@ z3_op_to_str = {
     Z3_OP_BLSHR: "LShR",
     Z3_OP_CONCAT: "Concat",
     Z3_OP_EXTRACT: "Extract",
+    Z3_OP_INT2BV: "Int2BV",
     Z3_OP_BV2INT: "BV2Int",
     Z3_OP_ARRAY_MAP: "Map",
     Z3_OP_SELECT: "Select",
@@ -153,7 +161,7 @@ _z3_infix = [
 
 def unparse_symbol(
     z3symbol: z3.ExprRef, symmap: dict[Sequence[Tuple[str, str]], JBSESymbol]
-):
+) -> str:
     symbol = JBSESymbol.parse(z3symbol.__str__())
 
     sym_keys = [k for k, v in symmap.items() if v == symbol][0]
@@ -161,7 +169,9 @@ def unparse_symbol(
     return ".".join([name for _, name in sym_keys])
 
 
-def z3_to_java(t: z3.ExprRef, symmap: dict[Sequence[Tuple[str, str]], JBSESymbol]):
+def z3_to_java(
+    t: z3.ExprRef, symmap: dict[Sequence[Tuple[str, str]], JBSESymbol]
+) -> str:
     if len(t.children()) == 0:
 
         if t.decl().kind() == z3.z3consts.Z3_OP_UNINTERPRETED:
@@ -177,10 +187,11 @@ def z3_to_java(t: z3.ExprRef, symmap: dict[Sequence[Tuple[str, str]], JBSESymbol
     try:
         opstring = z3_op_to_str[decl]
         if decl in _z3_unary:
-            return f"({opstring+children[0]})"
+            return f"({opstring + children[0]})"
         elif decl in _z3_infix:
-            return f"({children[0] + opstring +children[1]})"
+            return f"({children[0] + opstring + children[1]})"
         else:
             return f"({opstring.join(children)})"
-    except Exception:
+    except Exception as e:
+        print(e)
         raise Exception("Operator not in z3_op_to_str.")

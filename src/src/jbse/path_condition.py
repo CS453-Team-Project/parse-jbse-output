@@ -118,7 +118,7 @@ class PathConditionClauseAssume(PathConditionClause):
 
                 f = min(x for x in [widen_first, narrow_first] if x >= 0)
                 first = index + f
-                is_widening = index == widen_first
+                is_widening = first == index + widen_first
 
                 pointer = first + (9 if is_widening else 10)
                 index = pointer
@@ -135,7 +135,10 @@ class PathConditionClauseAssume(PathConditionClause):
 
                     pointer += 1
 
-                replaced = replace_conv_single(string[first : pointer + 1])
+                replaced = replace_conv_single(
+                    string[first : first + (9 if is_widening else 10)]
+                    + string[index:pointer]
+                )
                 string = string[:first] + replaced + string[pointer + 1 :]
 
                 pointer = len(replaced) + first
@@ -149,11 +152,11 @@ class PathConditionClauseAssume(PathConditionClause):
 
             index = 6 if is_widening else 7
             conversion_type = string[index : index + 2]
-            conversion_dict = widen if is_widening else narrow
-            conversion = conversion_dict.get(conversion_type, lambda x: f"({x})")
+            conversion = (widen if is_widening else narrow)[conversion_type]
 
             substr_start = index + 3
-            return conversion(replace_conv(string[substr_start - 1 :]))
+            inner = replace_conv(string[substr_start:])
+            return conversion(inner)
 
         def replace_num_lit(string: str, sign: str, digit: str, suffix: str):
             if suffix == "" or suffix == "L":

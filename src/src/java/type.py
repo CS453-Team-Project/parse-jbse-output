@@ -87,11 +87,11 @@ class JavaType(ABC):
             JavaTypeBoolean,
             JavaTypeByte,
             JavaTypeChar,
-            JavaTypeDouble,
-            JavaTypeFloat,
             JavaTypeShort,
             JavaTypeInt,
             JavaTypeLong,
+            JavaTypeFloat,
+            JavaTypeDouble,
         ]:
             return type(self) == type(o)
 
