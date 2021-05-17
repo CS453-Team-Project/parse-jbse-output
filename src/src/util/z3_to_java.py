@@ -161,7 +161,7 @@ def unparse_symbol(
     return ".".join([name for _, name in sym_keys])
 
 
-def z3toJava(t: z3.ExprRef, symmap: dict[Sequence[Tuple[str, str]], JBSESymbol]):
+def z3_to_java(t: z3.ExprRef, symmap: dict[Sequence[Tuple[str, str]], JBSESymbol]):
     if len(t.children()) == 0:
 
         if t.decl().kind() == z3.z3consts.Z3_OP_UNINTERPRETED:
@@ -170,7 +170,7 @@ def z3toJava(t: z3.ExprRef, symmap: dict[Sequence[Tuple[str, str]], JBSESymbol])
         else:
             return t.__str__()
 
-    children = [z3toJava(child, symmap) for child in t.children()]
+    children = [z3_to_java(child, symmap) for child in t.children()]
 
     decl = t.decl().kind()
 
