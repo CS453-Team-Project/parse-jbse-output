@@ -1,4 +1,5 @@
 import argparse
+from fnmatch import translate
 import os
 from typing import Tuple, Sequence
 
@@ -8,6 +9,8 @@ import z3
 from src.java.type import JavaType
 from src.jbse.path import JBSEPath, JBSEPathAux
 from src.util.arg import parse_method
+
+from src.util.z3toJava import z3toJava
 
 
 curr_dir = os.getcwd()
@@ -88,14 +91,20 @@ if __name__ == "__main__":
         NUM_MODELS,
     )
 
-    print("Symmap")
-    pprint.pprint(path.symmap)
+    # print("Symmap")
+    # pprint.pprint(path.symmap)
 
-    print(z3.simplify(z3.And(*path.z3_clauses)))
+    path_condition = z3.simplify(z3.And(*path.z3_clauses))
+
+    print("Concatenation of all clauses:")
+    print(path_condition)
     # Simplification using ctx-solver-simplify tactic,
     # but it seems not that good...
-    print(z3.Tactic('ctx-solver-simplify')(z3.And(*path.z3_clauses)))
+    print("Simplification using ctx-solver-simplify:")
+    print(z3.Tactic("ctx-solver-simplify")(path_condition))
 
+    print("In Java syntax:")
+    print(path_condition, "--->", z3toJava(path_condition, path.symmap))
 
     # assertions = s.assertions()
     # print([assertions[i] for i in range(len(assertions))])
