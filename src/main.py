@@ -17,8 +17,6 @@ NUM_MODELS = 10
 def main(target: str, methods: Sequence[str], num_models: int, debug: bool = False):
     methods = [parse_method(method) for method in methods]
 
-    print(methods)
-
     with open(target, "r") as f:
         content = "".join(f.readlines())
 
@@ -85,7 +83,7 @@ if __name__ == "__main__":
         methods = [r.strip() for r in f.readlines()]
 
     path, s, r, models = main(
-        os.path.join(curr_dir, "examples/1/path2.txt"),
+        os.path.join(curr_dir, "examples/1/path3.txt"),
         methods,
         NUM_MODELS,
     )
@@ -94,6 +92,9 @@ if __name__ == "__main__":
     pprint.pprint(path.symmap)
 
     print(z3.simplify(z3.And(*path.z3_clauses)))
+    # Simplification using ctx-solver-simplify tactic,
+    # but it seems not that good...
+    print(z3.Tactic('ctx-solver-simplify')(z3.And(*path.z3_clauses)))
 
 
     # assertions = s.assertions()

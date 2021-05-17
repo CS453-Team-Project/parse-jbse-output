@@ -81,16 +81,21 @@ class JBSEPath:
             # e.g., key = "{ROOT}:s.java/lang/String:value.length"
 
             # parameters = [('{ROOT}', 's'), ('java/lang/String', 'value'), (None, 'length')]
-            parameters = [
+            parameters = tuple([
                 (a[0], a[1]) if len(a) >= 2 else (None, a[0])
                 for a in [s.split(":") for s in key.split(".")]
-            ]
+            ])
 
-            return (tuple(parameters), symbol)
+            return (parameters, symbol)
 
         symmap = dict(
             [parse_symmap_entry(entry.strip()) for entry in symmap_str.split("&&")]
         )
+
+        for binary_name, method_name, param_types, ret_type in aux.methods:
+            for param_name, param_type in param_types.items():
+                if (('{ROOT}', param_name),) in symmap:
+                    symmap[(('{ROOT}', param_name),)].type = param_type
 
         # heap
         heap_pattern = r"Heap:\s*\{\s*\r?\n*((.|\r|\n)*?)\n\}"

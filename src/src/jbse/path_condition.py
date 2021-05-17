@@ -61,88 +61,100 @@ class PathConditionClauseAssume(PathConditionClause):
                     (from == SHORT && to == INT);
         }
         ```
-
-        XXX:
-
-        TODO: the following is not implemented
-        The first step is required to resolve nested type conversions, such as:
-        ```java
-        char b;
-        double f = (double)((int)b);
-        ```
-        which is transformed by JBSE into `(WIDEN-D(WIDEN-I({V1})))`.
-        (`1` here is arbitrary.) By adding type descriptor in front of this,
-        the conversion process is as follows: (whitespaces are added to
-        increase legibility)
-        ```
-        (WIDEN-D (WIDEN-I ({V1})))
-        ----add type desc---->  (WIDEN-D (WIDEN-I <C>({V1})))
-        ---replace WIDEN-I--->  (WIDEN-D
-                                    <I>(z3.ZeroExt (16, ({V1}))))
-        ---replace WIDEN-D--->  <R>(z3.ToReal                     # R for real
-                                    (z3.BV2Int(
-                                        (z3.ZeroExt (16, ({V1}))
-                                       , is_signed=True))
-        ```
         """
 
         # replace WIDEN-* and NARROW-*
-        # When WIDEN_or_NARROW-*(<type>{Symbol with known type}) found,
+        # When WIDEN_or_NARROW-*({Symbol with known type}) found,
         # replace them appropriately.
         # Otherwise, just remove the conversion. TODO: possible cause of fault
-        def replace_conv(string, type_from_str, type_to_str):
-            type_from = JavaType.parse(type_from_str)
-            type_to = JavaType.parse(type_to_str)
+        widen = {
+            # WIDEN-*I
+            "ZI": lambda x: f"z3.ZeroExt(31, {x})",
+            "BI": lambda x: f"z3.SignExt(24, {x})",
+            "SI": lambda x: f"z3.SignExt(16, {x})",
+            "CI": lambda x: f"z3.ZeroExt(16, {x})",
+            # WIDEN-I*
+            "IJ": lambda x: f"z3.SignExt(32, {x})",
+            "IF": lambda x: f"z3.ToReal(z3.BV2Int({x}, is_signed=True))",
+            "ID": lambda x: f"z3.ToReal(z3.BV2Int({x}, is_signed=True))",
+            # WIDEN-J*
+            "JF": lambda x: f"z3.ToReal(z3.BV2Int({x}, is_signed=True))",
+            "JD": lambda x: f"z3.ToReal(z3.BV2Int({x}, is_signed=True))",
+            # WIDEN-F*
+            "FD": lambda x: x,
+        }
+        narrow = {
+            # NARROW-I*
+            "IZ": lambda x: f"z3.If({x} == z3.BitVecVal(0, 32), z3.BitVecVal(1, 1), z3.BitVecVal(0, 1))",
+            "IB": lambda x: f"z3.Extract(7, 0, {x})",
+            "IS": lambda x: f"z3.Extract(15, 0, {x})",
+            "IC": lambda x: f"z3.Extract(15, 0, {x})",
+            # NARROW-J*
+            "JI": lambda x: f"z3.Extract(31, 0, {x})",
+            # NARROW-F*
+            "FI": lambda x: f"z3.Int2BV(z3.ToInt({x}), 32)",
+            "FJ": lambda x: f"z3.Int2BV(z3.ToInt({x}), 64)",
+            # NARROW-D*
+            "DI": lambda x: f"z3.Int2BV(z3.ToInt({x}), 32)",
+            "DJ": lambda x: f"z3.Int2BV(z3.ToInt({x}), 64)",
+            "DF": lambda x: x,
+        }
 
-            if type_from == JavaTypeBoolean():
-                if type_to == JavaTypeInt():
-                    return f"z3.ZeroExt(31, ({{V{sym_index}}}))"
+        def replace_conv(string: str) -> str:
+            # "(WIDEN-ID(sth1) + WIDEN-JD(sth2))"
+            #  ^
+            # -> "(mywidenid(sth1) + WIDEN-JD(sth2))"
+            #     - call single -    ^
+            # -> "(mywidenid(sth1) + mywidenjd(sth2))"
+            #                        - call single - ^
+            index = 0
+            pointer = 0
+            while pointer < len(string):
+                widen_first = string[index:].find("WIDEN-")
+                narrow_first = string[index:].find("NARROW-")
 
-            elif type_from == JavaTypeByte():
-                if type_to == JavaTypeInt():
-                    return f"z3.SignExt(24, ({{V{sym_index}}}))"
+                if widen_first == -1 and narrow_first == -1:
+                    break
 
-            elif type_from == JavaTypeShort():
-                if type_to == JavaTypeInt():
-                    return f"z3.SignExt(16, ({{V{sym_index}}}))"
+                f = min(x for x in [widen_first, narrow_first] if x >= 0)
+                first = index + f
+                is_widening = index == widen_first
 
-            elif type_from == JavaTypeChar():
-                if type_to == JavaTypeInt():
-                    return f"z3.ZeroExt(16, ({{V{sym_index}}}))"
+                pointer = first + (9 if is_widening else 10)
+                index = pointer
 
-            elif type_from == JavaTypeInt():
-                if type_to == JavaTypeBoolean():
-                    return f"z3.If(({{V{sym_index}}}) == z3.BitVecVal(0, 32), z3.BitVecVal(1, 1), z3.BitVecVal(0, 1))"
-                if type_to == JavaTypeByte():
-                    return f"z3.Extract(7, 0, ({{V{sym_index}}}))"
-                if type_to == JavaTypeShort() or type_to == JavaTypeChar():
-                    return f"z3.Extract(15, 0, ({{V{sym_index}}}))"
-                if type_to == JavaTypeLong():
-                    return f"z3.SignExt(32, ({{V{sym_index}}}))"
-                if type_to == JavaTypeFloat() or type_to == JavaTypeDouble():
-                    return f"z3.ToReal(z3.BV2Int(({{V{sym_index}}}), is_signed=True))"
-            elif type_from == JavaTypeLong():
-                if type_to == JavaTypeInt():
-                    return f"z3.Extract(31, 0, ({{V{sym_index}}}))"
-                if type_to == JavaTypeFloat() or type_to == JavaTypeDouble():
-                    return f"z3.ToReal(z3.BV2Int(({{V{sym_index}}}), is_signed=True))"
-            elif type_from == JavaTypeFloat():
-                if type_to == JavaTypeInt():
-                    return f"z3.ToReal(z3.(({{V{sym_index}}})))"
-                if type_to == JavaTypeLong():
-                    raise NotImplementedError("FLOAT TO LONG")  # TODO:
-                if type_to == JavaTypeDouble():
-                    raise NotImplementedError("FLOAT TO DOUBLE")  # TODO:
-            elif type_from == JavaTypeDouble():
-                if type_to == JavaTypeInt():
-                    raise NotImplementedError("FLOAT TO INT")  # TODO:
-                if type_to == JavaTypeLong():
-                    raise NotImplementedError("FLOAT TO LONG")  # TODO:
-                if type_to == JavaTypeFloat():
-                    raise NotImplementedError("FLOAT TO FLOAT")
+                parentheses_depth = 1
+                while True:
+                    if string[pointer] == "(":
+                        parentheses_depth += 1
+                    elif string[pointer] == ")":
+                        parentheses_depth -= 1
+
+                    if parentheses_depth == 0:
+                        break
+
+                    pointer += 1
+
+                replaced = replace_conv_single(string[first : pointer + 1])
+                string = string[:first] + replaced + string[pointer + 1 :]
+
+                pointer = len(replaced) + first
+                index = pointer
+
             return string
 
-        def replace_num_lit(string, sign, digit, suffix):
+        def replace_conv_single(string: str) -> str:
+            assert string.startswith("WIDEN-") or string.startswith("NARROW-")
+            is_widening = string.startswith("WIDEN-")
+
+            index = 6 if is_widening else 7
+            conversion_type = string[index : index + 2]
+            conversion = (widen if is_widening else narrow)[conversion_type]
+
+            substr_start = index + 3
+            return conversion(replace_conv(string[substr_start - 1 :]))
+
+        def replace_num_lit(string: str, sign: str, digit: str, suffix: str):
             if suffix == "" or suffix == "L":
                 # integer
                 num = int(digit) * (-1 if sign == "-" else 1)
@@ -158,7 +170,7 @@ class PathConditionClauseAssume(PathConditionClause):
 
             return string
 
-        def replace_val_sym(string, index_str):
+        def replace_val_sym(string: str, index_str: str) -> str:
             index = int(index_str)
             symbol = symmgr.get("V", index)
 
@@ -173,52 +185,13 @@ class PathConditionClauseAssume(PathConditionClause):
             if symbol.type == JavaTypeLong():
                 return f"z3.BitVec('{{V{index}}}', 64)"
             if symbol.type == JavaTypeFloat():
-                return f"z3.FP('{{V{index}}}', z3.FloatSingle())"
+                return f"z3.Real('{{V{index}}}')"
             if symbol.type == JavaTypeDouble():
-                return f"z3.FP('{{V{index}}}', z3.FloatDouble())"
+                return f"z3.Real('{{V{index}}}')"
 
             return string
 
-        # widen/narrow
-        widen = {
-            # WIDEN-*I
-            "ZI": lambda x: z3.ZeroExt(31, x),
-            "BI": lambda x: z3.SignExt(24, x),
-            "SI": lambda x: z3.SignExt(16, x),
-            "CI": lambda x: z3.ZeroExt(16, x),
-            # WIDEN-I*
-            "IJ": lambda x: z3.SignExt(32, x),
-            "IF": lambda x: z3.ToReal(z3.BV2Int(x, is_signed=True)),
-            "ID": lambda x: z3.ToReal(z3.BV2Int(x, is_signed=True)),
-            # WIDEN-J*
-            "JF": lambda x: z3.ToReal(z3.BV2Int(x, is_signed=True)),
-            "JD": lambda x: z3.ToReal(z3.BV2Int(x, is_signed=True)),
-            # WIDEN-F*
-            "FD": lambda x: x,
-        }
-        narrow = {
-            # NARROW-I*
-            "IZ": lambda x: z3.If(
-                x == z3.BitVecVal(0, 32), z3.BitVecVal(1, 1), z3.BitVecVal(0, 1)
-            ),
-            "IB": lambda x: z3.Extract(7, 0, x),
-            "IS": lambda x: z3.Extract(15, 0, x),
-            "IC": lambda x: z3.Extract(15, 0, x),
-            # NARROW-J*
-            "JI": lambda x: z3.Extract(31, 0, x),
-            # NARROW-F*
-            "FI": lambda x: z3.Int2BV(z3.ToInt(x), 32),
-            "FJ": lambda x: z3.Int2BV(z3.ToInt(x), 64),
-            # NARROW-D*
-            "DI": lambda x: z3.Int2BV(z3.ToInt(x), 32),
-            "DJ": lambda x: z3.Int2BV(z3.ToInt(x), 64),
-            "DF": lambda x: x,
-        }
-        string = re.sub(
-            r"(WIDEN|NARROW)\-(Z|B|C|D|F|S|I|J)(Z|B|C|D|F|S|I|J)",
-            lambda match: rf"{match.group(1).lower()}['{match.group(2)}{match.group(3)}']",
-            string,
-        )
+        string = replace_conv(string)
 
         # number literals
         num_lit_pattern = r"(\(([+-]?)(\d[\d\.]*)([dfL]?)\))"
