@@ -1,4 +1,5 @@
 import argparse
+from fnmatch import translate
 import os
 from typing import Tuple, Sequence
 
@@ -8,6 +9,8 @@ import z3
 from src.java.type import JavaType
 from src.jbse.path import JBSEPath, JBSEPathAux
 from src.util.arg import parse_method
+
+from src.util.z3toJava import z3toJava
 
 
 curr_dir = os.getcwd()
@@ -90,10 +93,12 @@ if __name__ == "__main__":
         NUM_MODELS,
     )
 
-    print("Symmap")
-    pprint.pprint(path.symmap)
+    # print("Symmap")
+    # pprint.pprint(path.symmap)
 
-    print(z3.simplify(z3.And(*path.z3_clauses)))
+    output = z3.simplify(z3.And(*path.z3_clauses))
+    translated = z3toJava(output, path.symmap)
+    print(output, "--->",translated)
 
 
     # assertions = s.assertions()
