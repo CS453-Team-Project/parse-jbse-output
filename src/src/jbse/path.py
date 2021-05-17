@@ -24,7 +24,9 @@ class JBSEPathAux:
 class JBSEPath:
     name: str
     ret_val: Optional[str]  # TODO: parse ret val
-    symmap: dict[Sequence[Tuple[str, str]], JBSESymbol]  # TODO: parse value type of symmap
+    symmap: dict[
+        Sequence[Tuple[str, str]], JBSESymbol
+    ]  # TODO: parse value type of symmap
     clauses: list[PathConditionClause]
     heap: dict[int, JBSEHeapValue]
     # static_store: TODO
@@ -73,7 +75,9 @@ class JBSEPath:
             raise ValueError("Improper input")
         symmap_str = matched.group(1)
 
-        def parse_symmap_entry(entry: str) -> Tuple[Sequence[Tuple[Optional[str], str]], JBSESymbol]:
+        def parse_symmap_entry(
+            entry: str,
+        ) -> Tuple[Sequence[Tuple[Optional[str], str]], JBSESymbol]:
             value_str, key = entry.split(" == ")
             symbol = symmgr.get_parse(value_str)
 
@@ -81,10 +85,12 @@ class JBSEPath:
             # e.g., key = "{ROOT}:s.java/lang/String:value.length"
 
             # parameters = [('{ROOT}', 's'), ('java/lang/String', 'value'), (None, 'length')]
-            parameters = tuple([
-                (a[0], a[1]) if len(a) >= 2 else (None, a[0])
-                for a in [s.split(":") for s in key.split(".")]
-            ])
+            parameters = tuple(
+                [
+                    (a[0], a[1]) if len(a) >= 2 else (None, a[0])
+                    for a in [s.split(":") for s in key.split(".")]
+                ]
+            )
 
             return (parameters, symbol)
 
@@ -94,8 +100,8 @@ class JBSEPath:
 
         for binary_name, method_name, param_types, ret_type in aux.methods:
             for param_name, param_type in param_types.items():
-                if (('{ROOT}', param_name),) in symmap:
-                    symmap[(('{ROOT}', param_name),)].type = param_type
+                if (("{ROOT}", param_name),) in symmap:
+                    symmap[(("{ROOT}", param_name),)].type = param_type
 
         # heap
         heap_pattern = r"Heap:\s*\{\s*\r?\n*((.|\r|\n)*?)\n\}"

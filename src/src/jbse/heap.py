@@ -11,7 +11,9 @@ from .symbol import JBSESymbol
 
 class JBSEHeapValue(ABC):
     @staticmethod
-    def parse(string: str, symmap: dict[Sequence[Tuple[Optional[str], str]], JBSESymbol]):
+    def parse(
+        string: str, symmap: dict[Sequence[Tuple[Optional[str], str]], JBSESymbol]
+    ):
         for c in [
             JBSEHeapValueClass,
             JBSEHeapValueArray,
@@ -113,7 +115,9 @@ class JBSEHeapValueArray(JBSEHeapValue):
         )
 
     @staticmethod
-    def parse(string: str, symmap: dict[Sequence[Tuple[Optional[str], str]], JBSESymbol]):
+    def parse(
+        string: str, symmap: dict[Sequence[Tuple[Optional[str], str]], JBSESymbol]
+    ):
         pattern = r"^Object\[(\d+)\]: \{(.|\r|\n)*\tType: \((\d+),(.*?)\)\s*\n\t+Length: (.*?)\s*\n\t+Items: \{((.|\r|\n)*)\}\n\t\}"
         matched = re.search(pattern, string)
 
@@ -201,7 +205,9 @@ class JBSEHeapValueClass(JBSEHeapValue):
         )
 
     @staticmethod
-    def parse(string: str, symmap: dict[Sequence[Tuple[Optional[str], str]], JBSESymbol]):
+    def parse(
+        string: str, symmap: dict[Sequence[Tuple[Optional[str], str]], JBSESymbol]
+    ):
         pattern = (
             r"^Object\[(\d+)\]: \{(.|\r|\n)*Class: \((\d+),(.*?)\)(.|\r|\n)*\n\t\}"
         )
@@ -217,7 +223,9 @@ class JBSEHeapValueClass(JBSEHeapValue):
             r"\t+Field\[\d+]: Name: (.*?), Type: (.*?), Value: (.*?) \(type: .\)"
         )
         for name, type_desc, value in re.findall(field_pattern, string):
-            field = JBSEHeapClassField(name, type_desc, JavaValue.parse(value, type_desc))
+            field = JBSEHeapClassField(
+                name, type_desc, JavaValue.parse(value, type_desc)
+            )
             if isinstance(field.value, JavaValueSymbolic):
                 field.value.symbol.type = JavaType.parse(type_desc)
 
@@ -227,10 +235,12 @@ class JBSEHeapValueClass(JBSEHeapValue):
         matched = re.search(origin_pattern, string)
         origin = None if matched is None else matched.group(1)
         if origin is not None:
-            origin = tuple([
-                (a[0], a[1]) if len(a) >= 2 else (None, a[0])
-                for a in [s.split(":") for s in origin.split(".")]
-            ])
+            origin = tuple(
+                [
+                    (a[0], a[1]) if len(a) >= 2 else (None, a[0])
+                    for a in [s.split(":") for s in origin.split(".")]
+                ]
+            )
 
         if origin in symmap:
             symbol = symmap[origin]
