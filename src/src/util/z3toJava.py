@@ -94,5 +94,4 @@ def z3toJava(t:z3.ExprRef, symmap:dict[Sequence[Tuple[str, str]], JBSESymbol]):
         else:
             return f"({opstring.join(children)})"
     except Exception:
-        print(Exception())
-        raise Exception("Converting failed")
+        raise Exception("Operator not in z3OptoStr.")
