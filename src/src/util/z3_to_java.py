@@ -22,7 +22,7 @@ from src.jbse.symbol import *
 # This is modified from z3printer._z3_op_to_str
 ##########################################################################################
 
-z3OptoStr = {
+z3_op_to_str = {
     Z3_OP_TRUE: "True",
     Z3_OP_FALSE: "False",
     Z3_OP_EQ: "==",
@@ -175,7 +175,7 @@ def z3_to_java(t: z3.ExprRef, symmap: dict[Sequence[Tuple[str, str]], JBSESymbol
     decl = t.decl().kind()
 
     try:
-        opstring = z3OptoStr[decl]
+        opstring = z3_op_to_str[decl]
         if decl in _z3_unary:
             return f"({opstring+children[0]})"
         elif decl in _z3_infix:
@@ -183,4 +183,4 @@ def z3_to_java(t: z3.ExprRef, symmap: dict[Sequence[Tuple[str, str]], JBSESymbol
         else:
             return f"({opstring.join(children)})"
     except Exception:
-        raise Exception("Operator not in z3OptoStr.")
+        raise Exception("Operator not in z3_op_to_str.")

@@ -149,7 +149,8 @@ class PathConditionClauseAssume(PathConditionClause):
 
             index = 6 if is_widening else 7
             conversion_type = string[index : index + 2]
-            conversion = (widen if is_widening else narrow)[conversion_type]
+            conversion_dict = widen if is_widening else narrow
+            conversion = conversion_dict.get(conversion_type, lambda x: f"({x})")
 
             substr_start = index + 3
             return conversion(replace_conv(string[substr_start - 1 :]))
@@ -236,12 +237,12 @@ class PathConditionClauseAssumeExpands(PathConditionClause):
 
 
 # class PathConditionClauseAssumeClassInitialized(PathConditionClause):
-#     def __init__(self, content: str): #TODO
+#     def __init__(self, content: str): # TODO: class initialized
 #         self.content = content
 
 
 # class PathConditionClauseAssumeClassNotInitialized(PathConditionClause):
-#     def __init__(self, content: str): #TODO
+#     def __init__(self, content: str): # TODO: class not initialized
 #         self.content = content
 
 

@@ -24,12 +24,10 @@ class JBSEPathAux:
 class JBSEPath:
     name: str
     ret_val: Optional[str]  # TODO: parse ret val
-    symmap: dict[
-        Sequence[Tuple[str, str]], JBSESymbol
-    ]  # TODO: parse value type of symmap
+    symmap: dict[Sequence[Tuple[str, str]], JBSESymbol]
     clauses: list[PathConditionClause]
     heap: dict[int, JBSEHeapValue]
-    # static_store: TODO
+    # static_store: TODO: static store
 
     def __repr__(self):
         symmap_str = ""
@@ -83,8 +81,7 @@ class JBSEPath:
 
             # set parameter types
             # e.g., key = "{ROOT}:s.java/lang/String:value.length"
-
-            # parameters = [('{ROOT}', 's'), ('java/lang/String', 'value'), (None, 'length')]
+            #       ==> parameters = [('{ROOT}', 's'), ('java/lang/String', 'value'), (None, 'length')]
             parameters = tuple(
                 [
                     (a[0], a[1]) if len(a) >= 2 else (None, a[0])
@@ -117,7 +114,7 @@ class JBSEPath:
         # stack
         stack_pattern = r"Stack:\s*\{\s*\r?\n*((.|\r|\n)*?)\n\}"
         matched = re.search(stack_pattern, string)
-        # it is possible to not have stack frame showing
+        # it is possible to not have any stack frames showing
         if matched is not None:
             stack_str = matched.group(1)
 
@@ -153,6 +150,7 @@ class JBSEPath:
 
     @property
     def z3_clauses(self):
+        # TODO: which clauses should be put into the z3 solver?
         return [c.cond for c in self.clauses if type(c) == PathConditionClauseAssume]
 
     def solve(
@@ -162,7 +160,6 @@ class JBSEPath:
         z3.CheckSatResult,  # sat, unknown, unsat
         Sequence[Tuple[z3.ModelRef, Sequence[int]]],  # [(<model>, <unsat clauses>)]
     ]:
-        # TODO: which clauses should be put into the z3 solver?
         clauses = self.z3_clauses
 
         s = z3.Solver()
