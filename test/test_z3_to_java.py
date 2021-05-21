@@ -60,5 +60,20 @@ def test_conjunctive():
         >= z3.RealVal(0.0),
         symmap,
     )
+    # ToReal(If(int2bv(ToInt(3/10 + {V6})) + 3 < 0,
+    #       BV2Int(int2bv(ToInt(3/10 + {V6})) + 3) -
+    #       4294967296,
+    #       BV2Int(int2bv(ToInt(3/10 + {V6})) + 3))) +
+    # ToReal(If(int2bv(ToInt(3/10 + {V6})) +
+    #         ZeroExt(16, {V2}) +
+    #         40 <
+    #         0,
+    #         BV2Int(int2bv(ToInt(3/10 + {V6})) +
+    #                 ZeroExt(16, {V2}) +
+    #                 40) -
+    #         4294967296,
+    #         BV2Int(int2bv(ToInt(3/10 + {V6})) +
+    #                 ZeroExt(16, {V2}) +
+    #                 40))
     print(result)
     assert False

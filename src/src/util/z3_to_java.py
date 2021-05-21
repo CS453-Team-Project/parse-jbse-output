@@ -151,6 +151,12 @@ _z3_infix = [
     Z3_OP_BASHR,
     Z3_OP_BSHL,
 ]
+_z3_typecast = [
+    Z3_OP_INT2BV,
+    Z3_OP_BV2INT,
+    Z3_OP_TO_REAL,
+    Z3_OP_TO_INT
+]
 
 ####################################################################################################################################
 #
@@ -172,17 +178,39 @@ def unparse_symbol(
 def z3_to_java(
     t: z3.ExprRef, symmap: dict[Sequence[Tuple[str, str]], JBSESymbol]
 ) -> str:
+    print("====================================================")
+    print("expr: ",t, "expr type",type(t),"expr params",t.params())
+    
+    decl = t.decl().kind()
+    try:
+        print("decl to java: ",z3_op_to_str[decl],"z3 decl params", t.decl().params())
+    except Exception:
+        print("Not Operation")
+    
     if len(t.children()) == 0:
 
         if t.decl().kind() == z3.z3consts.Z3_OP_UNINTERPRETED:
             return unparse_symbol(t, symmap)
 
         else:
+            # print(t)
             return t.__str__()
 
     children = [z3_to_java(child, symmap) for child in t.children()]
 
-    decl = t.decl().kind()
+    
+    # If(int2bv(ToInt(3/10 + {V6})) +
+    #       ZeroExt(16, {V2}) +
+    #       40 <
+    #       0,
+    #       BV2Int(int2bv(ToInt(3/10 + {V6})) +
+    #              ZeroExt(16, {V2}) +
+    #              40) -
+    #       4294967296,
+    #       BV2Int(int2bv(ToInt(3/10 + {V6})) +
+    #              ZeroExt(16, {V2}) +
+    #              40))
+    
 
     try:
         opstring = z3_op_to_str[decl]
@@ -190,6 +218,8 @@ def z3_to_java(
             return f"({opstring + children[0]})"
         elif decl in _z3_infix:
             return f"({children[0] + opstring + children[1]})"
+        elif decl in _z3_typecast:
+            return f"({opstring}) {children[0]}"
         else:
             return f"({opstring.join(children)})"
     except Exception as e:
