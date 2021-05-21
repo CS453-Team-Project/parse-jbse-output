@@ -73,12 +73,21 @@ def log(
 if __name__ == "__main__":
     # Argument Parsing
     parser = argparse.ArgumentParser()
-    parser.add_argument('--target','-t')
-    parser.add_argument('--methods', '-m', nargs='+')
+    parser.add_argument("--target", "-t")
+    parser.add_argument("--methods", "-m", nargs="+")
+    parser.add_argument("--nummodels", "-n")
 
     args = parser.parse_args()
     target_path = args.target
     methods = args.methods
+
+    num_models = None
+    try:
+        num_models = int(args.nummodels)
+    except:
+        pass
+    finally:
+        num_models = num_models or NUM_MODELS
 
     # Default arguments
     if methods == None:
@@ -91,18 +100,26 @@ if __name__ == "__main__":
     path, s, r, models = main(
         target_path,
         methods,
-        NUM_MODELS,
+        num_models,
     )
 
     path_condition = z3.simplify(z3.And(*path.z3_clauses))
 
     print("Concatenation of all clauses:")
     print(path_condition)
+    print("")
 
     # Simplification using ctx-solver-simplify tactic,
     # but it seems not that good sometimes...
     print("Simplification using ctx-solver-simplify:")
     print(z3.Tactic("ctx-solver-simplify")(path_condition))
+    print("")
 
     print("In Java syntax:")
     print(path_condition, "--->\n", z3_to_java(path_condition, path.symmap))
+    print("")
+
+    print("Models:")
+    for i, m in enumerate(models):
+        print('Model ' + (str(i) + ' ').ljust(4, '=') + '=' * 40)
+        print(m)

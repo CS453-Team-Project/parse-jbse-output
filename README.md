@@ -4,34 +4,41 @@ Python scripts to parse a JBSE output.
 
 
 ```sh
-$ python src/main.py -t "examples/5.txt" -m "com/cs453/group5/examples/Calculator:getSign:(J[CC)I:number:longs:b"
-The path .1.1.2.1.1.1.1.1.1.1.1.1[5923] is satisfiable with the following models.
-1. [{V7} = 65487,
- {V6} = 65487,
- {V1} = 65495,
- {V0} = 3,
- {V3} = 3]
-2. [{V1} = 0, {V0} = 3, {V6} = 0, {V7} = 0, {V3} = 6]
-3. [{V1} = 32768, {V0} = 3, {V6} = 1, {V7} = 1, {V3} = 6]
-4. [{V1} = 32769, {V0} = 3, {V6} = 1, {V7} = 1, {V3} = 6]
+$ python src/main.py -t examples/1/path2.txt -m "com/cs453/group5/examples/Calculator:getLength:(Ljava/lang/String;)I:s"
+Concatenation of all clauses:
+And(0 <= {V3}, Not({V3} <= 0), Not({V6} == 40))
+
+Simplification using ctx-solver-simplify:
+[[Not({V3} <= 0), Not({V6} == 40)]]
+
+In Java syntax:
+And(0 <= {V3}, Not({V3} <= 0), Not({V6} == 40)) --->
+ ((0<=s.value.length)&&(!(s.value.length<=0))&&(!(s.value[0]==(char)40)))
+
+Models:
+Model 0 ==========================================
+([{V6} = 65495, {V3} = 1073741824], [])
+Model 1 ==========================================
+([{V6} = 0, {V3} = 1], [])
+Model 2 ==========================================
+([{V6} = 1, {V3} = 3], [])
+Model 3 ==========================================
+([{V6} = 1, {V3} = 1048579], [])
+Model 4 ==========================================
+([{V6} = 1, {V3} = 34603011], [])
+Model 5 ==========================================
+([{V6} = 1, {V3} = 34603139], [])
+Model 6 ==========================================
+([{V6} = 1, {V3} = 101712003], [])
+Model 7 ==========================================
+([{V6} = 1, {V3} = 101777539], [])
+Model 8 ==========================================
+([{V6} = 1, {V3} = 103874691], [])
+Model 9 ==========================================
+([{V6} = 1, {V3} = 103874707], [])
 ```
 
 
-## Current status
+## TODO
 
-* Parse a JBSE path
-    + Almost done. Supported fields are as follows:
-        ```python
-        @dataclass
-        class JBSEPath:
-            name: str
-            ret_val: Optional[str]  # TODO: parse ret val
-            symmap: dict[JBSESymbol, str]  # TODO: parse value type of symmap
-            clauses: list[PathConditionClause]
-            heap: dict[int, JBSEHeapValue]
-            # static_store: TODO
-            # stack: TODO
-        ```
-    + Refer to TODOs and FIXMEs in the source code.
-* Generate satisfying model for the path condition: done.
-* Linking Z3 variables to Java variables: TODO.
+* Parse returned value and raised exceptions
