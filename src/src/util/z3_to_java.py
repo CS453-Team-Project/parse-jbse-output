@@ -23,26 +23,21 @@ from src.jbse.symbol import *
 ##########################################################################################
 
 z3_op_to_str = {
-    Z3_OP_TRUE: "True",
-    Z3_OP_FALSE: "False",
+    # Z3_OP_TRUE: "True",
+    # Z3_OP_FALSE: "False",
     Z3_OP_EQ: "==",
     Z3_OP_DISTINCT: "!=",
-    Z3_OP_ITE: "If",
     Z3_OP_AND: "&&",
     Z3_OP_OR: "||",
     Z3_OP_IFF: "==",
     Z3_OP_XOR: "^",
     Z3_OP_NOT: "!",
-    Z3_OP_IMPLIES: "Implies",
     Z3_OP_ADD: "+",
     Z3_OP_SUB: "-",
     Z3_OP_MUL: "*",
     Z3_OP_IDIV: "/",
     Z3_OP_MOD: "%",
-    Z3_OP_TO_REAL: "ToReal",
-    Z3_OP_TO_INT: "ToInt",
     Z3_OP_POWER: "**",
-    Z3_OP_IS_INT: "IsInt",
     Z3_OP_LE: "<=",
     Z3_OP_LT: "<",
     Z3_OP_GE: ">=",
@@ -58,66 +53,12 @@ z3_op_to_str = {
     Z3_OP_BUDIV: "/",
     Z3_OP_BSDIV: "/",
     Z3_OP_BSMOD: "%",
-    Z3_OP_BSREM: "SRem",
-    Z3_OP_BUREM: "URem",
-    Z3_OP_EXT_ROTATE_LEFT: "RotateLeft",
-    Z3_OP_EXT_ROTATE_RIGHT: "RotateRight",
     Z3_OP_SLEQ: "<=",
     Z3_OP_SLT: "<",
     Z3_OP_SGEQ: ">=",
     Z3_OP_SGT: ">",
-    Z3_OP_ULEQ: "ULE",
-    Z3_OP_ULT: "ULT",
-    Z3_OP_UGEQ: "UGE",
-    Z3_OP_UGT: "UGT",
-    Z3_OP_SIGN_EXT: "SignExt",
-    Z3_OP_ZERO_EXT: "ZeroExt",
-    Z3_OP_REPEAT: "RepeatBitVec",
     Z3_OP_BASHR: ">>",
     Z3_OP_BSHL: "<<",
-    Z3_OP_BLSHR: "LShR",
-    Z3_OP_CONCAT: "Concat",
-    Z3_OP_EXTRACT: "Extract",
-    Z3_OP_INT2BV: "Int2BV",
-    Z3_OP_BV2INT: "BV2Int",
-    Z3_OP_ARRAY_MAP: "Map",
-    Z3_OP_SELECT: "Select",
-    Z3_OP_STORE: "Store",
-    Z3_OP_CONST_ARRAY: "K",
-    Z3_OP_ARRAY_EXT: "Ext",
-    Z3_OP_PB_AT_MOST: "AtMost",
-    Z3_OP_PB_LE: "PbLe",
-    Z3_OP_PB_GE: "PbGe",
-    Z3_OP_PB_EQ: "PbEq",
-    Z3_OP_SEQ_CONCAT: "Concat",
-    Z3_OP_SEQ_PREFIX: "PrefixOf",
-    Z3_OP_SEQ_SUFFIX: "SuffixOf",
-    Z3_OP_SEQ_UNIT: "Unit",
-    Z3_OP_SEQ_CONTAINS: "Contains",
-    Z3_OP_SEQ_REPLACE: "Replace",
-    Z3_OP_SEQ_AT: "At",
-    Z3_OP_SEQ_NTH: "Nth",
-    Z3_OP_SEQ_INDEX: "IndexOf",
-    Z3_OP_SEQ_LAST_INDEX: "LastIndexOf",
-    Z3_OP_SEQ_LENGTH: "Length",
-    Z3_OP_STR_TO_INT: "StrToInt",
-    Z3_OP_INT_TO_STR: "IntToStr",
-    Z3_OP_SEQ_IN_RE: "InRe",
-    Z3_OP_SEQ_TO_RE: "Re",
-    Z3_OP_RE_PLUS: "Plus",
-    Z3_OP_RE_STAR: "Star",
-    Z3_OP_RE_OPTION: "Option",
-    Z3_OP_RE_UNION: "Union",
-    Z3_OP_RE_RANGE: "Range",
-    Z3_OP_RE_INTERSECT: "Intersect",
-    Z3_OP_RE_COMPLEMENT: "Complement",
-    Z3_OP_FPA_IS_NAN: "fpIsNaN",
-    Z3_OP_FPA_IS_INF: "fpIsInf",
-    Z3_OP_FPA_IS_ZERO: "fpIsZero",
-    Z3_OP_FPA_IS_NORMAL: "fpIsNormal",
-    Z3_OP_FPA_IS_SUBNORMAL: "fpIsSubnormal",
-    Z3_OP_FPA_IS_NEGATIVE: "fpIsNegative",
-    Z3_OP_FPA_IS_POSITIVE: "fpIsPositive",
 }
 
 _z3_unary = [Z3_OP_UMINUS, Z3_OP_BNOT, Z3_OP_BNEG, Z3_OP_NOT]
@@ -151,12 +92,6 @@ _z3_infix = [
     Z3_OP_BASHR,
     Z3_OP_BSHL,
 ]
-_z3_typecast = [
-    Z3_OP_INT2BV,
-    Z3_OP_BV2INT,
-    Z3_OP_TO_REAL,
-    Z3_OP_TO_INT
-]
 
 ####################################################################################################################################
 #
@@ -178,50 +113,154 @@ def unparse_symbol(
 def z3_to_java(
     t: z3.ExprRef, symmap: dict[Sequence[Tuple[str, str]], JBSESymbol]
 ) -> str:
-    print("====================================================")
-    print("expr: ",t, "expr type",type(t),"expr params",t.params())
-    
-    decl = t.decl().kind()
-    try:
-        print("decl to java: ",z3_op_to_str[decl],"z3 decl params", t.decl().params())
-    except Exception:
-        print("Not Operation")
-    
-    if len(t.children()) == 0:
+    # print("        ====================================================")
+    # print("        expr: ", t, "expr type", type(t), "expr params", t.params())
 
-        if t.decl().kind() == z3.z3consts.Z3_OP_UNINTERPRETED:
+    decl = t.decl().kind()
+
+    if len(t.children()) == 0:
+        if decl == Z3_OP_UNINTERPRETED:
             return unparse_symbol(t, symmap)
 
+        if type(t) == z3.RatNumRef:
+            num_literal = t.as_decimal(prec=17).replace("?", "")
+
+            if "." not in num_literal:
+                return f"{num_literal}.0d"
+
+            return f"{num_literal}d"
+
+        # TODO: replace unsigned to signed
+        if decl == Z3_OP_BNUM:
+            size = t.params()[1]
+
+            if size == 1:
+                return 'false' if t.params()[0] == '0' else 'true'
+
+            if size == 8:
+                val = int(t.params()[0])
+                return f'(byte){val if val < 128 else val - 256}'
+
+            if size == 16:
+                return f'(char){t.params()[0]}'
+
+            if size == 32:
+                val = int(t.params()[0])
+                return str(val if val < 2 ** 31 else val - 2 ** 32)
+
+            if size == 64:
+                val = int(t.params()[0])
+                return f'{val if val < 2 ** 63 else val - 2 ** 64}L'
+
+            return str(t)
+
+        # TODO: replace unsigned to signed
         else:
-            # print(t)
-            return t.__str__()
+            return str(t)
 
-    children = [z3_to_java(child, symmap) for child in t.children()]
+    if decl in _z3_unary:
+        return f"({z3_op_to_str[decl] + z3_to_java(t.children()[0], symmap)})"
 
-    
-    # If(int2bv(ToInt(3/10 + {V6})) +
-    #       ZeroExt(16, {V2}) +
-    #       40 <
-    #       0,
-    #       BV2Int(int2bv(ToInt(3/10 + {V6})) +
-    #              ZeroExt(16, {V2}) +
-    #              40) -
-    #       4294967296,
-    #       BV2Int(int2bv(ToInt(3/10 + {V6})) +
-    #              ZeroExt(16, {V2}) +
-    #              40))
-    
+    if decl in _z3_infix:
+        return f"({z3_to_java(t.children()[0], symmap) + z3_op_to_str[decl] + z3_to_java(t.children()[1], symmap)})"
 
-    try:
-        opstring = z3_op_to_str[decl]
-        if decl in _z3_unary:
-            return f"({opstring + children[0]})"
-        elif decl in _z3_infix:
-            return f"({children[0] + opstring + children[1]})"
-        elif decl in _z3_typecast:
-            return f"({opstring}) {children[0]}"
-        else:
-            return f"({opstring.join(children)})"
-    except Exception as e:
-        print(e)
-        raise Exception("Operator not in z3_op_to_str.")
+    # BI, SI, IJ
+    if decl == Z3_OP_SIGN_EXT:
+        if len(t.params()) == 1 and len(t.children()) == 1:
+            offset = t.params()[0]
+            child = t.children()[0]
+
+            if offset == 24 or offset == 16:  # {Byte, Short} -> Int
+                return f"(int)({z3_to_java(child, symmap)})"
+
+            if offset == 32:  # Int -> Long
+                return f"(long)({z3_to_java(child, symmap)})"
+
+            raise ValueError("invalid offset")
+
+    # ZI, CI
+    if decl == Z3_OP_ZERO_EXT:
+        if len(t.children()) == 1:
+            child = t.children()[0]
+
+            return f"(int)({z3_to_java(child, symmap)})"
+
+    # * -> D (assuming F does not appear in the source code)
+    if decl == Z3_OP_TO_REAL:
+        if len(t.children()) == 1:
+            child = t.children()[0]
+            if child.decl().kind() == Z3_OP_ITE:
+                cond, true_branch, false_branch = child.children()
+                if type(cond) == z3.BoolRef and cond.decl().kind() != Z3_OP_EQ:
+                    grandchild = (
+                        true_branch
+                        if len(str(true_branch)) < len(str(false_branch))
+                        else false_branch
+                    ).children()[0]
+                    return f"(double)({z3_to_java(grandchild, symmap)})"
+
+            if child.decl().kind() == Z3_OP_BV2INT:
+                return f"(double)({z3_to_java(child.chlidren()[0], symmap)})"
+
+
+            return f"(double)({z3_to_java(child, symmap)})"
+
+    # IZ
+    if decl == Z3_OP_ITE:
+        if len(t.children()) == 3:
+            cond, true_branch, false_branch = t.children()
+            print("decl kind", cond.decl().kind())
+            if (
+                type(cond) == z3.BoolRef
+                and cond.decl().kind() == Z3_OP_EQ
+                and type(true_branch) == z3.BitVecNumRef
+                and true_branch.params() == ["0", 1]
+                and type(false_branch) == z3.BitVecNumRef
+                and false_branch.params() == ["1", 1]
+            ):
+                zero_num_ref = cond.children()[0]
+                if (
+                    type(zero_num_ref) == z3.BitVecNumRef
+                    and zero_num_ref.params()[0] == "0"
+                ):
+                    return f"(bool)({z3_to_java(cond.children()[1], symmap)})"
+
+    # IB, IC, JI, assuming short does not appear in the source code
+    if decl == Z3_OP_EXTRACT:
+        if len(t.children()) == 1 and len(t.params()) == 2:
+            child = t.children()[0]
+            upper_bound, lower_bound = t.params()
+
+            if lower_bound == 0:
+                if upper_bound == 7:
+                    return f"(byte)({z3_to_java(child, symmap)})"
+
+                if upper_bound == 15:
+                    return f"(char)({z3_to_java(child, symmap)})"
+
+                if upper_bound == 31:
+                    return f"(int)({z3_to_java(child, symmap)})"
+
+    # D -> int-like (assuming F does not appear in the source code)
+    if decl == Z3_OP_INT2BV:
+        if (
+            len(t.children()) == 1
+            and t.children()[0].decl().kind() == z3.Z3_OP_TO_INT
+            and len(t.params()) == 1
+        ):
+            child = t.children()[0].children()[0]
+            offset = t.params()[0]
+
+            if offset == 32:
+                return f"(int)({z3_to_java(child, symmap)})"
+
+            if offset == 64:
+                return f"(long)({z3_to_java(child, symmap)})"
+
+            raise ValueError("invalid offset")
+
+    if decl in z3_op_to_str:
+        children = [z3_to_java(child, symmap) for child in t.children()]
+        return f"({z3_op_to_str[decl].join(children)})"
+
+    raise ValueError("invalid expression: " + str(t))
