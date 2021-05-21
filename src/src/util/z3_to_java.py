@@ -110,6 +110,30 @@ def unparse_symbol(
     return ".".join([name for _, name in sym_keys])
 
 
+def bv_to_java(t: z3.BitVecNumRef):
+    size = t.params()[1]
+
+    if size == 1:
+        return 'false' if t.params()[0] == '0' else 'true'
+
+    if size == 8:
+        val = int(t.params()[0])
+        return f'(byte){val if val < 128 else val - 256}'
+
+    if size == 16:
+        return f'(char){t.params()[0]}'
+
+    if size == 32:
+        val = int(t.params()[0])
+        return str(val if val < 2 ** 31 else val - 2 ** 32)
+
+    if size == 64:
+        val = int(t.params()[0])
+        return f'{val if val < 2 ** 63 else val - 2 ** 64}L'
+
+    return str(t)
+
+
 def z3_to_java(
     t: z3.ExprRef, symmap: dict[Sequence[Tuple[str, str]], JBSESymbol]
 ) -> str:
@@ -130,31 +154,9 @@ def z3_to_java(
 
             return f"{num_literal}d"
 
-        # TODO: replace unsigned to signed
         if decl == Z3_OP_BNUM:
-            size = t.params()[1]
+            return bv_to_java(t)
 
-            if size == 1:
-                return 'false' if t.params()[0] == '0' else 'true'
-
-            if size == 8:
-                val = int(t.params()[0])
-                return f'(byte){val if val < 128 else val - 256}'
-
-            if size == 16:
-                return f'(char){t.params()[0]}'
-
-            if size == 32:
-                val = int(t.params()[0])
-                return str(val if val < 2 ** 31 else val - 2 ** 32)
-
-            if size == 64:
-                val = int(t.params()[0])
-                return f'{val if val < 2 ** 63 else val - 2 ** 64}L'
-
-            return str(t)
-
-        # TODO: replace unsigned to signed
         else:
             return str(t)
 

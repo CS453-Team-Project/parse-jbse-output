@@ -8,9 +8,10 @@ import z3
 
 from src.java.type import JavaType
 from src.jbse.path import JBSEPath, JBSEPathAux
+from src.jbse.symbol_manager import symmgr
 from src.util.arg import parse_method
 
-from src.util.z3_to_java import z3_to_java
+from src.util.z3_to_java import bv_to_java, z3_to_java
 
 
 curr_dir = os.getcwd()
@@ -73,6 +74,7 @@ def log(
 if __name__ == "__main__":
     # Argument Parsing
     parser = argparse.ArgumentParser()
+    parser.add_argument("--verbose", "-v", action="store_true")
     parser.add_argument("--target", "-t")
     parser.add_argument("--methods", "-m", nargs="+")
     parser.add_argument("--nummodels", "-n")
@@ -105,21 +107,71 @@ if __name__ == "__main__":
 
     path_condition = z3.simplify(z3.And(*path.z3_clauses))
 
-    print("Concatenation of all clauses:")
-    print(path_condition)
-    print("")
+    if args.verbose:
+        print("Concatenation of all clauses:")
+        print(path_condition)
+        print("")
 
-    # Simplification using ctx-solver-simplify tactic,
-    # but it seems not that good sometimes...
-    print("Simplification using ctx-solver-simplify:")
-    print(z3.Tactic("ctx-solver-simplify")(path_condition))
-    print("")
+        # Simplification using ctx-solver-simplify tactic,
+        # but it seems not that good sometimes...
+        print("Simplification using ctx-solver-simplify:")
+        print(z3.Tactic("ctx-solver-simplify")(path_condition))
+        print("")
 
-    print("In Java syntax:")
-    print(path_condition, "--->\n", z3_to_java(path_condition, path.symmap))
-    print("")
+        print("Path condition in Java syntax:")
+        print(path_condition, "--->\n", z3_to_java(path_condition, path.symmap))
+        print("")
 
-    print("Models:")
-    for i, m in enumerate(models):
-        print('Model ' + (str(i) + ' ').ljust(4, '=') + '=' * 40)
-        print(m)
+        print("Models:")
+        for i, (model, unsat_clauses) in enumerate(models):
+            print("Model " + str(i) + ":")
+
+            if len(unsat_clauses) != 0:
+                print("   ", "Unsatisfied clauses:")
+                for j, clause in enumerate(unsat_clauses):
+                    print("   ", "   ", str(j) + ".", clause)
+
+            print("   ", "Assignments:")
+
+            for variable in model:
+                name = variable.name()
+                variable = variable()
+
+                print(
+                    "   ",
+                    "   ",
+                    next(
+                        (
+                            ".".join([k[1] for k in key])
+                            for key, value in path.symmap.items()
+                            if value == symmgr.get_parse(name)
+                        ),
+                        None,
+                    ),
+                    "=",
+                    bv_to_java(model.evaluate(variable)),
+                    end="; \n",
+                )
+
+    else:
+        print(z3_to_java(path_condition, path.symmap))
+
+        for model, unsat_clauses in models:
+            for variable in model:
+                name = variable.name()
+                variable = variable()
+                print(
+                    next(
+                        (
+                            ".".join([k[1] for k in key])
+                            for key, value in path.symmap.items()
+                            if value == symmgr.get_parse(name)
+                        ),
+                        None,
+                    ),
+                    "=",
+                    bv_to_java(model.evaluate(variable)),
+                    end="; ",
+                )
+
+            print("")
