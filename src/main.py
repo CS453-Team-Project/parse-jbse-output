@@ -1,5 +1,6 @@
 from fnmatch import translate
 import os
+import argparse
 from typing import Tuple, Sequence
 
 import pprint
@@ -70,11 +71,25 @@ def log(
 
 
 if __name__ == "__main__":
-    with open(os.path.join(curr_dir, "examples/1/methods.txt"), "r") as f:
-        methods = [r.strip() for r in f.readlines()]
+    # Argument Parsing
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--target','-t')
+    parser.add_argument('--methods', '-m', nargs='+')
 
+    args = parser.parse_args()
+    target_path = args.target
+    methods = args.methods
+
+    # Default arguments
+    if methods == None:
+        with open(os.path.join(curr_dir, "examples/1/methods.txt"), "r") as f:
+            methods = [r.strip() for r in f.readlines()]
+    if target_path == None:
+        target_path = os.path.join(curr_dir, "examples/1/path3.txt")
+
+    # run main
     path, s, r, models = main(
-        os.path.join(curr_dir, "examples/1/path3.txt"),
+        target_path,
         methods,
         NUM_MODELS,
     )
@@ -90,4 +105,4 @@ if __name__ == "__main__":
     print(z3.Tactic("ctx-solver-simplify")(path_condition))
 
     print("In Java syntax:")
-    print(path_condition, "--->", z3_to_java(path_condition, path.symmap))
+    print(path_condition, "--->\n", z3_to_java(path_condition, path.symmap))
