@@ -4,21 +4,24 @@ from dataclasses import dataclass
 from typing import Any, Tuple, Union, Optional, Literal, Sequence, Callable
 import re
 
-from ..java.value import JavaValue, JavaValueSymbolic
+from ..java.value import JavaValue, JavaValueSimple, JavaValueSymbolic
 from ..java.type import *
 from .symbol import JBSESymbol
+from .symbol_manager import JBSESymbolManager
 
 
 class JBSEHeapValue(ABC):
     @staticmethod
     def parse(
-        string: str, symmap: dict[Sequence[Tuple[Optional[str], str]], JBSESymbol]
+        symmgr: JBSESymbolManager,
+        string: str,
+        symmap: dict[Sequence[Tuple[Optional[str], str]], JBSESymbol],
     ):
         for c in [
             JBSEHeapValueClass,
             JBSEHeapValueArray,
         ]:
-            parsed = c.parse(string, symmap)
+            parsed = c.parse(symmgr, string, symmap)
             if parsed is not None:
                 return parsed
 
@@ -43,9 +46,12 @@ class JBSEHeapValueArrayItem:
         )
 
     @staticmethod
-    def parse(string: str, type_desc: Optional[str] = None) -> list:
+    def parse(
+        symmgr: JBSESymbolManager, string: str, type_desc: Optional[str] = None
+    ) -> list:
         """
         Typical form of input will be
+        `"My string"`,
         `Object[1895], Object[1895], Object[2027], null, null, null, null, null, null, null`
         or
         `({INDEX-1591058047}) >= (0) && ({INDEX-1591058047}) < ({V2}) && ({INDEX-1591058047}) == (0) -> {V5}`
@@ -54,10 +60,18 @@ class JBSEHeapValueArrayItem:
         if re.search(r"^\(no assumption on (other )?values\)$", string):
             return None
 
+        if re.search(r"^\"(.*)\"$", string):
+            return [
+                JBSEHeapValueArrayItem(i, JavaValueSimple("C", ord(c)))
+                for (i, c) in enumerate(
+                    string[1:-1].encode("utf8").decode("unicode_escape")
+                )
+            ]
+
         if " -> " not in string:
             # Object[1895], Object[1895], Object[2027], null, null, null, ...
             return [
-                JBSEHeapValueArrayItem(i, JavaValue.parse(s.strip(), type_desc))
+                JBSEHeapValueArrayItem(i, JavaValue.parse(symmgr, s.strip(), type_desc))
                 for (i, s) in enumerate(string.split(","))
             ]
 
@@ -75,14 +89,18 @@ class JBSEHeapValueArrayItem:
         )
         if index is not None:
             # ({INDEX-??}) == (<index>) -> <value>
-            return [JBSEHeapValueArrayItem(index, JavaValue.parse(value, type_desc))]
+            return [
+                JBSEHeapValueArrayItem(index, JavaValue.parse(symmgr, value, type_desc))
+            ]
 
         # <misc assumptions> -> ???
         # if ??? is of the form Object[<heap pos>][some lambda]
         matched = re.search(r"Object\[(\d+)\]\[((.*?)_(.*?))\]$", value)
         if matched is not None:
             heap_pos = int(matched.group(1))
-            return [JBSEHeapValueArrayItem(index, JavaValue.parse(value, type_desc))]
+            return [
+                JBSEHeapValueArrayItem(index, JavaValue.parse(symmgr, value, type_desc))
+            ]
 
         raise ValueError("Not supported")
 
@@ -114,9 +132,14 @@ class JBSEHeapValueArray(JBSEHeapValue):
             "        )"
         )
 
+    def __eq__(self, o):
+        return type(o) == JBSEHeapValueArray and self.index == o.index
+
     @staticmethod
     def parse(
-        string: str, symmap: dict[Sequence[Tuple[Optional[str], str]], JBSESymbol]
+        symmgr: JBSESymbolManager,
+        string: str,
+        symmap: dict[Sequence[Tuple[Optional[str], str]], JBSESymbol],
     ):
         pattern = r"^Object\[(\d+)\]: \{(.|\r|\n)*\tType: \((\d+),(.*?)\)\s*\n\t+Length: (.*?)\s*\n\t+Items: \{((.|\r|\n)*)\}\n\t\}"
         matched = re.search(pattern, string)
@@ -138,7 +161,7 @@ class JBSEHeapValueArray(JBSEHeapValue):
         matched = re.search(origin_pattern, string)
         origin = None if matched is None else matched.group(1)
 
-        length = JavaValue.parse(length)
+        length = JavaValue.parse(symmgr, length)
 
         array_type = JavaType.parse(type_desc_name)
         assert type(array_type) == JavaTypeArray
@@ -149,7 +172,9 @@ class JBSEHeapValueArray(JBSEHeapValue):
             for item in items_str.split("\n")
             if (stripped := item.lstrip()) != ""
             if (
-                array_item := JBSEHeapValueArrayItem.parse(stripped, type_desc_name[1:])
+                array_item := JBSEHeapValueArrayItem.parse(
+                    symmgr, stripped, type_desc_name[1:]
+                )
             )
             is not None
             for a in array_item
@@ -204,9 +229,14 @@ class JBSEHeapValueClass(JBSEHeapValue):
             "        )"
         )
 
+    def __eq__(self, o):
+        return type(o) == JBSEHeapValueClass and self.index == o.index
+
     @staticmethod
     def parse(
-        string: str, symmap: dict[Sequence[Tuple[Optional[str], str]], JBSESymbol]
+        symmgr: JBSESymbolManager,
+        string: str,
+        symmap: dict[Sequence[Tuple[Optional[str], str]], JBSESymbol],
     ):
         pattern = (
             r"^Object\[(\d+)\]: \{(.|\r|\n)*Class: \((\d+),(.*?)\)(.|\r|\n)*\n\t\}"
@@ -224,7 +254,7 @@ class JBSEHeapValueClass(JBSEHeapValue):
         )
         for name, type_desc, value in re.findall(field_pattern, string):
             field = JBSEHeapClassField(
-                name, type_desc, JavaValue.parse(value, type_desc)
+                name, type_desc, JavaValue.parse(symmgr, value, type_desc)
             )
             if isinstance(field.value, JavaValueSymbolic):
                 field.value.symbol.type = JavaType.parse(type_desc)

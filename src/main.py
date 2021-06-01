@@ -5,10 +5,13 @@ from typing import Tuple, Sequence
 
 import pprint
 import z3
+from glob import glob
 
 from src.java.type import JavaType
-from src.jbse.path import JBSEPath, JBSEPathAux
-from src.jbse.symbol_manager import symmgr
+from src.java.value import JavaValueFromHeap, JavaValueSimple, JavaValueSymbolic
+from src.jbse.path import JBSEPath, JBSEPathAux, JBSEPathResultReturn
+from src.jbse.path_condition import PathConditionClauseAssume
+from src.jbse.symbol import JBSESymbol, JBSESymbolRef
 from src.util.arg import parse_method
 
 from src.util.z3_to_java import bv_to_java, z3_to_java
@@ -71,107 +74,219 @@ def log(
             print(f"{i + 1}.", repr(m))
 
 
+class KillConditionFinder:
+    def __init__(
+        self,
+        origin_paths: Sequence[str],
+        mutant_paths: Sequence[str],
+        methods: Sequence[str],
+    ):
+        methods = [parse_method(method) for method in methods]
+
+        self.origin_paths: list[JBSEPath] = [
+            JBSEPath.parse(target_path, JBSEPathAux(methods))
+            for target_path in origin_paths
+        ]
+        self.mutant_paths: list[JBSEPath] = [
+            JBSEPath.parse(target_path, JBSEPathAux(methods))
+            for target_path in mutant_paths
+        ]
+        self.kill_conditions = list()
+        self.unknown_conditions = list()
+
+    def find_kill(self):
+        for mutant_path in self.mutant_paths:
+            for origin_path in self.origin_paths:
+                # TODO: what if both are symbolic?
+                if mutant_path.result != origin_path.result:
+                    path_condition = [*origin_path.z3_clauses, *mutant_path.z3_clauses]
+
+                    # TODO: strengthen mutant_path.result != origin_path.result
+                    # TODO: support more cases
+                    if (
+                        type(mutant_path.result)
+                        == type(origin_path.result)
+                        == JBSEPathResultReturn
+                    ):
+                        if (
+                            type(mutant_path.result.value) == JavaValueSymbolic
+                            and type(origin_path.result.value) == JavaValueSimple
+                        ):
+                            symbol: JBSESymbol = mutant_path.result.value.symbol
+                            clause = PathConditionClauseAssume.parse(
+                                mutant_path.symmgr,
+                                f"({{{'R' if type(symbol) == JBSESymbolRef else 'V'}{symbol.index}}}) != ({origin_path.result.value.unparse()})",
+                            )
+                            if clause is not None:
+                                path_condition.append(clause.cond)
+    
+                        if (
+                            type(origin_path.result.value) == JavaValueSymbolic
+                            and type(mutant_path.result.value) == JavaValueSimple
+                        ):
+                            symbol: JBSESymbol = origin_path.result.value.symbol
+                            clause = PathConditionClauseAssume.parse(
+                                origin_path.symmgr,
+                                f"({{{'R' if type(symbol) == JBSESymbolRef else 'V'}{symbol.index}}}) != ({mutant_path.result.value.unparse()})",
+                            )
+                            if clause is not None:
+                                path_condition.append(clause.cond)
+
+                        # TODO: what if both are symbolic
+
+                    s = z3.Solver()
+                    s.add(*path_condition)
+
+                    if str(s.check()) == "sat":
+                        self.kill_conditions.append(
+                            {
+                                "origin_pathname": origin_path.name,
+                                "origin_result": origin_path.result,
+                                "mutant_pathname": mutant_path.name,
+                                "mutant_result": mutant_path.result,
+                                "path_condition": path_condition,
+                            }
+                        )
+                    elif str(s.check()) == "unknown":
+                        self.unknown_conditions.append(
+                            {
+                                "origin_pathname": origin_path.name,
+                                "origin_result": origin_path.result,
+                                "mutant_pathname": mutant_path.name,
+                                "mutant_result": mutant_path.result,
+                                "path_condition": path_condition,
+                            }
+                        )
+
+
 if __name__ == "__main__":
     # Argument Parsing
     parser = argparse.ArgumentParser()
     parser.add_argument("--verbose", "-v", action="store_true")
     parser.add_argument("--target", "-t")
-    parser.add_argument("--methods", "-m", nargs="+")
     parser.add_argument("--nummodels", "-n")
+    parser.add_argument("--action", "-a", choices=["parse", "kill"])
+    parser.add_argument("--project", "-p")
+    parser.add_argument("--mutant", "-m")
 
     args = parser.parse_args()
     target_path = args.target
-    methods = args.methods
 
-    num_models = None
-    try:
-        num_models = int(args.nummodels)
-    except:
-        pass
-    finally:
-        num_models = num_models or NUM_MODELS
+    with open(os.path.join(args.project, "methods.txt"), "r") as methods_file:
+        methods = [l.strip() for l in methods_file.readlines()]
 
-    # Default arguments
-    if methods == None:
-        with open(os.path.join(curr_dir, "examples/1/methods.txt"), "r") as f:
-            methods = [r.strip() for r in f.readlines()]
-    if target_path == None:
-        target_path = os.path.join(curr_dir, "examples/1/path3.txt")
+    action = args.action
 
-    # run main
-    path, s, r, models = main(
-        target_path,
-        methods,
-        num_models,
-    )
+    if action == "parse":
+        num_models = None
+        try:
+            num_models = int(args.nummodels)
+        except:
+            pass
+        finally:
+            num_models = num_models or NUM_MODELS
 
-    path_condition = z3.simplify(z3.And(*path.z3_clauses))
+        if target_path == None:
+            target_path = os.path.join(curr_dir, "examples/1/path3.txt")
 
-    if args.verbose:
-        print("Concatenation of all clauses:")
-        print(path_condition)
-        print("")
+        # run main
+        path, s, r, models = main(
+            target_path,
+            methods,
+            num_models,
+        )
 
-        # Simplification using ctx-solver-simplify tactic,
-        # but it seems not that good sometimes...
-        print("Simplification using ctx-solver-simplify:")
-        print(z3.Tactic("ctx-solver-simplify")(path_condition))
-        print("")
+        path_condition = z3.simplify(z3.And(*path.z3_clauses))
 
-        print("Path condition in Java syntax:")
-        print(path_condition, "--->\n", z3_to_java(path_condition, path.symmap))
-        print("")
-
-        print("Models:")
-        for i, (model, unsat_clauses) in enumerate(models):
-            print("Model " + str(i) + ":")
-
-            if len(unsat_clauses) != 0:
-                print("   ", "Unsatisfied clauses:")
-                for j, clause in enumerate(unsat_clauses):
-                    print("   ", "   ", str(j) + ".", clause)
-
-            print("   ", "Assignments:")
-
-            for variable in model:
-                name = variable.name()
-                variable = variable()
-
-                print(
-                    "   ",
-                    "   ",
-                    next(
-                        (
-                            ".".join([k[1] for k in key])
-                            for key, value in path.symmap.items()
-                            if value == symmgr.get_parse(name)
-                        ),
-                        None,
-                    ),
-                    "=",
-                    bv_to_java(model.evaluate(variable)),
-                    end="; \n",
-                )
-
-    else:
-        print(z3_to_java(path_condition, path.symmap))
-
-        for model, unsat_clauses in models:
-            for variable in model:
-                name = variable.name()
-                variable = variable()
-                print(
-                    next(
-                        (
-                            ".".join([k[1] for k in key])
-                            for key, value in path.symmap.items()
-                            if value == symmgr.get_parse(name)
-                        ),
-                        None,
-                    ),
-                    "=",
-                    bv_to_java(model.evaluate(variable)),
-                    end="; ",
-                )
-
+        if args.verbose:
+            print("Concatenation of all clauses:")
+            print(path_condition)
             print("")
+
+            # Simplification using ctx-solver-simplify tactic,
+            # but it seems not that good sometimes...
+            print("Simplification using ctx-solver-simplify:")
+            print(z3.Tactic("ctx-solver-simplify")(path_condition))
+            print("")
+
+            print("Path condition in Java syntax:")
+            print(path_condition, "--->\n", z3_to_java(path_condition, path.symmap))
+            print("")
+
+            print("Models:")
+            for i, (model, unsat_clauses) in enumerate(models):
+                print("Model " + str(i) + ":")
+
+                if len(unsat_clauses) != 0:
+                    print("   ", "Unsatisfied clauses:")
+                    for j, clause in enumerate(unsat_clauses):
+                        print("   ", "   ", str(j) + ".", clause)
+
+                print("   ", "Assignments:")
+
+                for variable in model:
+                    name = variable.name()
+                    variable = variable()
+
+                    print(
+                        "   ",
+                        "   ",
+                        next(
+                            (
+                                ".".join([k[1] for k in key])
+                                for key, value in path.symmap.items()
+                                if value == path.symmgr.get_parse(name)
+                            ),
+                            None,
+                        ),
+                        "=",
+                        bv_to_java(model.evaluate(variable)),
+                        end="; \n",
+                    )
+
+        else:
+            print(z3_to_java(path_condition, path.symmap))
+
+            for model, unsat_clauses in models:
+                for variable in model:
+                    name = variable.name()
+                    variable = variable()
+                    print(
+                        next(
+                            (
+                                ".".join([k[1] for k in key])
+                                for key, value in path.symmap.items()
+                                if value == path.symmgr.get_parse(name)
+                            ),
+                            None,
+                        ),
+                        "=",
+                        bv_to_java(model.evaluate(variable)),
+                        end="; ",
+                    )
+
+                print("")
+
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument("--verbose", "-v", action="store_true")
+    # parser.add_argument("--target", "-t")
+    # parser.add_argument("--methods", "-m", nargs="+")
+    # parser.add_argument("--nummodels", "-n")
+    # parser.add_argument("--action", "-a", choices=["parse","kill"])
+    # parser.add_argument("--origin_dir")
+    # parser.add_argument("--mutant_dir")
+    # python main.py --action kill --origin_dir [origin_dir] --mutant_dir [mutant_dir]
+    if action == "kill":
+        origin, mutant = glob(f"{args.project}/original/*.txt"), glob(
+            f"{args.project}/mutants/{args.mutant}/*.txt"
+        )
+
+        origin = ["".join(open(file).readlines()) for file in origin]
+        mutant = ["".join(open(file).readlines()) for file in mutant]
+
+        finder = KillConditionFinder(origin, mutant, methods)
+
+        finder.find_kill()
+
+        pprint.pprint(finder.kill_conditions)
+        pprint.pprint(finder.unknown_conditions)

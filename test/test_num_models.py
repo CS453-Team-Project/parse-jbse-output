@@ -2,10 +2,12 @@ import sys
 import pytest
 import os
 
+
 curr_dir = os.getcwd()
 sys.path.insert(1, os.path.join(curr_dir, "src"))
 
 from main import main
+from src.jbse.path_condition import PathConditionClauseAssume
 
 NUM_MODELS = 10
 
@@ -14,7 +16,7 @@ def test1_1():
     with open(os.path.join(curr_dir, "examples/1/methods.txt"), "r") as f:
         methods = [r.strip() for r in f.readlines()]
     path, s, r, models = main(
-        os.path.join(curr_dir, "examples/1/path1.txt"),
+        os.path.join(curr_dir, "examples/1/original/path1.txt"),
         methods,
         NUM_MODELS,
     )
@@ -25,7 +27,7 @@ def test1_2():
     with open(os.path.join(curr_dir, "examples/1/methods.txt"), "r") as f:
         methods = [r.strip() for r in f.readlines()]
     path, s, r, models = main(
-        os.path.join(curr_dir, "examples/1/path2.txt"),
+        os.path.join(curr_dir, "examples/1/original/path2.txt"),
         methods,
         NUM_MODELS,
     )
@@ -36,7 +38,7 @@ def test1_3():
     with open(os.path.join(curr_dir, "examples/1/methods.txt"), "r") as f:
         methods = [r.strip() for r in f.readlines()]
     path, s, r, models = main(
-        os.path.join(curr_dir, "examples/1/path3.txt"),
+        os.path.join(curr_dir, "examples/1/original/path3.txt"),
         methods,
         NUM_MODELS,
     )
@@ -47,7 +49,7 @@ def test1_4():
     with open(os.path.join(curr_dir, "examples/1/methods.txt"), "r") as f:
         methods = [r.strip() for r in f.readlines()]
     path, s, r, models = main(
-        os.path.join(curr_dir, "examples/1/path4.txt"),
+        os.path.join(curr_dir, "examples/1/original/path4.txt"),
         methods,
         NUM_MODELS,
     )

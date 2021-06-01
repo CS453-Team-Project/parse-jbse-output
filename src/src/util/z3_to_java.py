@@ -137,9 +137,6 @@ def bv_to_java(t: z3.BitVecNumRef):
 def z3_to_java(
     t: z3.ExprRef, symmap: dict[Sequence[Tuple[str, str]], JBSESymbol]
 ) -> str:
-    # print("        ====================================================")
-    # print("        expr: ", t, "expr type", type(t), "expr params", t.params())
-
     decl = t.decl().kind()
 
     if len(t.children()) == 0:
@@ -211,7 +208,6 @@ def z3_to_java(
     if decl == Z3_OP_ITE:
         if len(t.children()) == 3:
             cond, true_branch, false_branch = t.children()
-            print("decl kind", cond.decl().kind())
             if (
                 type(cond) == z3.BoolRef
                 and cond.decl().kind() == Z3_OP_EQ

@@ -1,22 +1,23 @@
 from abc import ABC, abstractmethod
 import re
 
+
 from ..java.type import *
 from .symbol import JBSESymbolRef
-from .symbol_manager import symmgr
+from .symbol_manager import JBSESymbolManager
 
 import z3
 
 
 class PathConditionClause(ABC):
     @staticmethod
-    def parse(string):
+    def parse(symmgr: JBSESymbolManager, string: str):
         for c in [
             PathConditionClauseAssumeExpands,
             PathConditionClauseAssumeNull,
             PathConditionClauseAssume,
         ]:
-            parsed = c.parse(string)
+            parsed = c.parse(symmgr, string)
             if parsed is not None:
                 return parsed
 
@@ -28,7 +29,7 @@ class PathConditionClauseAssume(PathConditionClause):
         self.cond = cond
 
     @staticmethod
-    def parse(string):
+    def parse(symmgr: JBSESymbolManager, string: str):
         """
         Parse a single path condition of type Assume.
 
@@ -226,7 +227,7 @@ class PathConditionClauseAssumeExpands(PathConditionClause):
         self.heap_pos = heap_pos
 
     @staticmethod
-    def parse(string):
+    def parse(symmgr: JBSESymbolManager, string: str):
         pattern = r"^\{R(\d+)\} == Object\[(\d+)\] \(fresh\)$"
         matched = re.search(pattern, string)
         if matched is None:
@@ -254,7 +255,7 @@ class PathConditionClauseAssumeNull(PathConditionClause):
         self.sym_ref = sym_ref
 
     @staticmethod
-    def parse(string):
+    def parse(symmgr: JBSESymbolManager, string: str):
         pattern = r"^\{R(\d+)\} == null$"
         matched = re.search(pattern, string)
         if matched is None:

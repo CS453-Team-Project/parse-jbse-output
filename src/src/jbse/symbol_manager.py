@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal, Tuple
 
 from src.java.type import JavaType
 from .symbol import *
@@ -27,8 +27,3 @@ class JBSESymbolManager:
                 return self.get(string[0], int(string[1:]))
             except ValueError:
                 raise ValueError("Invalid input")
-
-            raise ValueError("Invalid input")
-
-
-symmgr = JBSESymbolManager()

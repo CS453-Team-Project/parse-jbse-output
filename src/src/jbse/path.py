@@ -1,3 +1,4 @@
+from abc import ABC
 from dataclasses import dataclass
 from itertools import chain, combinations
 from typing import Tuple, Optional, Any, Union, Sequence
@@ -7,9 +8,9 @@ import z3
 
 from src.java.type import *
 from src.jbse.symbol import *
+from src.jbse.symbol_manager import JBSESymbolManager
 from src.jbse.path_condition import *
 from src.jbse.heap import *
-from src.jbse.symbol_manager import symmgr
 from src.util.math import *
 
 
@@ -20,11 +21,28 @@ class JBSEPathAux:
     methods: Sequence[Tuple[str, str, dict, JavaType]]
 
 
+class JBSEPathResult(ABC):
+    """Either returning value or raising exception."""
+
+    pass
+
+
+@dataclass
+class JBSEPathResultReturn(JBSEPathResult):
+    value: JavaValue
+
+
+@dataclass
+class JBSEPathResultException(JBSEPathResult):
+    exception: JBSEHeapValueClass
+
+
 @dataclass
 class JBSEPath:
     name: str
-    ret_val: Optional[str]  # TODO: parse ret val
+    result: JBSEPathResult
     symmap: dict[Sequence[Tuple[str, str]], JBSESymbol]
+    symmgr: JBSESymbolManager
     clauses: list[PathConditionClause]
     heap: dict[int, JBSEHeapValue]
     # static_store: TODO: static store
@@ -54,17 +72,15 @@ class JBSEPath:
 
     @staticmethod
     def parse(string: str, aux: JBSEPathAux):
+        symmgr = JBSESymbolManager()
+
         # pathname
         pathname_pattern = r"((\.\d+)+\[\d+\])\s*\r?\nLeaf state"
         matched = re.search(pathname_pattern, string)
         if matched is None:
+            print(string)
             raise ValueError("Improper input")
         pathname = matched.group(1)
-
-        # returned value
-        ret_val_pattern = r"\nLeaf state, returned value: (.*?)\r?\n"
-        matched = re.search(ret_val_pattern, string)
-        ret_val = None if matched is None else matched.group(1)
 
         # symbol map
         symmap_pattern = r"where:\s*\r?\n((.|\r|\n)*?)\r?\nStatic store:"
@@ -109,7 +125,9 @@ class JBSEPath:
 
         heap = {}
         for match in re.finditer(r"(Object\[(\d+)\]: \{(.|\r|\n)*?\n\t\})", heap_str):
-            heap[match.group(2)] = JBSEHeapValue.parse(match.group(1), symmap)
+            heap[int(match.group(2))] = JBSEHeapValue.parse(
+                symmgr, match.group(1), symmap
+            )
 
         # stack
         stack_pattern = r"Stack:\s*\{\s*\r?\n*((.|\r|\n)*?)\n\}"
@@ -142,11 +160,32 @@ class JBSEPath:
         pathcond_str = matched.group(1)
 
         clauses = [
-            PathConditionClause.parse(entry.strip())
+            PathConditionClause.parse(symmgr, entry.strip())
             for entry in pathcond_str.split("&&")
         ]
 
-        return JBSEPath(pathname, ret_val, symmap, clauses, heap)
+        # result
+        # - returned value
+        ret_val_pattern = r"\nLeaf state, returned value: (.*?)\r?\n"
+        matched = re.search(ret_val_pattern, string)
+        if matched:
+            result = JBSEPathResultReturn(
+                JavaValue.parse(symmgr, matched.group(1), str(aux.methods[0][3]))
+            )
+
+        # - raised exception
+        else:
+            raised_exception_pattern = (
+                r"\nLeaf state, raised exception: Object\[(\d+)\]\r?\n"
+            )
+            matched = re.search(raised_exception_pattern, string)
+            result = (
+                None
+                if matched is None
+                else JBSEPathResultException(heap[int(matched.group(1))])
+            )
+
+        return JBSEPath(pathname, result, symmap, symmgr, clauses, heap)
 
     @property
     def z3_clauses(self):

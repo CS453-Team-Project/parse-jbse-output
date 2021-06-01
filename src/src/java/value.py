@@ -3,15 +3,14 @@ from dataclasses import dataclass
 from typing import Any, Optional
 import re
 
-
 from .type import *
 from ..jbse.symbol import JBSESymbol
-from ..jbse.symbol_manager import symmgr
+from ..jbse.symbol_manager import JBSESymbolManager
 
 
 class JavaValue(ABC):
     @staticmethod
-    def parse(string: str, type_desc: Optional[str] = None):
+    def parse(symmgr: JBSESymbolManager, string: str, type_desc: Optional[str] = None):
         for c in [
             JavaValueSymbolic,
             JavaValueSimple,
@@ -20,7 +19,7 @@ class JavaValue(ABC):
             JavaValueSubscriptUnderscore,
             JavaValueUnknown,
         ]:
-            parsed = c.parse(string, type_desc)
+            parsed = c.parse(symmgr, string, type_desc)
             if parsed is not None:
                 return parsed
 
@@ -32,7 +31,7 @@ class JavaValueSymbolic(JavaValue):
     symbol: JBSESymbol
 
     @staticmethod
-    def parse(string: str, type_desc: Optional[str] = None):
+    def parse(symmgr: JBSESymbolManager, string: str, type_desc: Optional[str] = None):
         pattern = r"== Object\[\d+\]$"
         matched = re.search(pattern, string)
         if matched is not None:
@@ -51,12 +50,39 @@ class JavaValueSymbolic(JavaValue):
 
 @dataclass
 class JavaValueSimple(JavaValue):
-    type_desc: Optional[str]
+    type_desc: Optional[JavaType]
     value: Any
 
+    def unparse(self) -> str:
+        """Reverse of `parse`."""
+        if self.value is None:
+            return "null"
+
+        if self.type_desc == JavaTypeBoolean():
+            return "true" if self.value else "false"
+
+        if self.type_desc == JavaTypeByte():
+            return f"(byte) {self.value}"
+
+        if self.type_desc == JavaTypeDouble():
+            return f"{self.value}d"
+
+        if self.type_desc == JavaTypeFloat():
+            return f"{self.value}f"
+
+        if self.type_desc == JavaTypeInt():
+            return f"{self.value}"
+
+        if self.type_desc == JavaTypeLong():
+            return f"{self.value}L"
+
+        if self.type_desc == JavaTypeChar():
+            return "\\u0000" if self.value == 0 else chr(self.value)
+
+
     @staticmethod
-    def parse(string: str, type_desc: Optional[str] = None):
-        # TODO: object, NaN and ±Infinities are not implemented
+    def parse(symmgr: JBSESymbolManager, string: str, type_desc: Optional[str] = None):
+        # TODO: object, NaN and ±∞ are not implemented
         # null
         if type_desc not in list("ZBDFSICJ") and string == "null":
             # FIXME: type? value?
@@ -71,7 +97,7 @@ class JavaValueSimple(JavaValue):
             return JavaValueSimple(JavaTypeBoolean(), string == "true")
         # byte
         if (type_desc in ["B", None]) and (
-            type_descmatched := re.search(r"^\(byte\) (-?(\d+))$", string)
+            matched := re.search(r"^\(byte\) (-?(\d+))$", string)
         ) is not None:
             return JavaValueSimple(JavaTypeByte(), int(matched.group(1)))
         # double
@@ -101,6 +127,7 @@ class JavaValueSimple(JavaValue):
             matched := re.search(r"^(-?(\d+))L$", string)
         ) is not None:
             return JavaValueSimple((JavaTypeLong()), int(matched.group(1)))
+        # XXX: short is not implemented
 
         return None
 
@@ -110,7 +137,7 @@ class JavaValueFromHeap(JavaValue):
     index: int
 
     @staticmethod
-    def parse(string: str, type_desc: Optional[str] = None):
+    def parse(symmgr: JBSESymbolManager, string: str, type_desc: Optional[str] = None):
         matched = re.search(r"^Object\[(\d+)\]$", string)
         if matched is not None:
             return JavaValueFromHeap(int(matched.group(1)))
@@ -124,11 +151,11 @@ class JavaValueSubscript(JavaValue):
     index: JavaValue
 
     @staticmethod
-    def parse(string: str, type_desc: Optional[str] = None):
+    def parse(symmgr: JBSESymbolManager, string: str, type_desc: Optional[str] = None):
         matched = re.search(r"^([^\[]*?)\s*\[\s*(.*)\s*\]$", string)
         if matched is not None and matched.group(1) != "Object":
-            operand = JavaValue.parse(matched.group(1))
-            index = JavaValue.parse(matched.group(2))
+            operand = JavaValue.parse(symmgr, matched.group(1))
+            index = JavaValue.parse(symmgr, matched.group(2))
             if operand is not None and index is not None:
                 return JavaValueSubscript(operand, index)
 
@@ -141,10 +168,10 @@ class JavaValueSubscriptUnderscore(JavaValue):
     index: str
 
     @staticmethod
-    def parse(string: str, type_desc: Optional[str] = None):
+    def parse(symmgr: JBSESymbolManager, string: str, type_desc: Optional[str] = None):
         matched = re.search(r"^(.*)\s*\[(([^\]]*?)\b_\b([^\]]*?))\]$", string)
         if matched is not None and matched.group(1) != "Object":
-            operand = JavaValue.parse(matched.group(1))
+            operand = JavaValue.parse(symmgr, matched.group(1))
             if operand is not None:
                 return JavaValueSubscriptUnderscore(operand, matched.group(2))
 
@@ -158,5 +185,5 @@ class JavaValueUnknown(JavaValue):
     # TODO: reduce the range of unknown
 
     @staticmethod
-    def parse(string: str, type_desc: Optional[str] = None):
+    def parse(symmgr: JBSESymbolManager, string: str, type_desc: Optional[str] = None):
         return JavaValueUnknown(string)
