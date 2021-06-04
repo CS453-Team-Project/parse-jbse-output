@@ -308,42 +308,7 @@ if __name__ == "__main__":
                 )
 
         else:
-            # print(z3_to_java(path_condition, path.symmap))
-
-            for model, unsat_clauses in models:
-                stringified_conditions = []
-
-                for variable in model:
-                    name = variable.name()
-                    variable = variable()
-                    stringified_conditions.append(
-                        next(
-                            (
-                                ".".join([k[1] for k in key])
-                                for key, value in path.symmap.items()
-                                if value == path.symmgr.get_parse(name)
-                            ),
-                            None,
-                        )
-                        + " = "
-                        + bv_to_java(model.evaluate(variable))
-                    )
-
-                for clause in path.clauses:
-                    if type(clause) == PathConditionClauseAssumeNull:
-                        stringified_conditions.append(
-                            next(
-                                (
-                                    ".".join([k[1] for k in key])
-                                    for (key, value) in path.symmap.items()
-                                    if value == clause.sym_ref
-                                ),
-                                None,
-                            )
-                            + " == null",
-                        )
-
-                print(" && ".join(stringified_conditions) + ";")
+            print(z3_to_java(path_condition, path.symmap))
 
     if action == "kill":
         origin, mutant = glob(f"{args.project}/original/*.txt"), glob(
