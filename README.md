@@ -36,5 +36,8 @@ Model 0:
 ```
 
 # TODO
+* Additional assumption clauses
+    + Length of String instances
+    + Length of array primitives
 * Java test code generation?
 
