@@ -40,9 +40,9 @@ class JBSEHeapValueArrayItem:
     def __repr__(self) -> str:
         return (
             "JBSEHeapValueArrayItem(\n"
-            f"                    index={self.index}\n"
-            f"                    value={repr(self.value)}\n"
-            "                )"
+            f"            index={self.index}\n"
+            f"            value={repr(self.value)}\n"
+            "        )"
         )
 
     @staticmethod
@@ -121,19 +121,19 @@ class JBSEHeapValueArray(JBSEHeapValue):
         self.items = items
 
     def __repr__(self) -> str:
-        items_str = ",\n                ".join([repr(c) for c in self.items])
+        items_str = ",\n        ".join([repr(c) for c in self.items])
         return (
             "JBSEHeapValueArray(\n"
-            f"            index={self.index}\n"
-            f"            origin={repr(self.origin)}\n"
-            f"            type_desc={self.type_desc}\n"
-            f"            length={repr(self.length)}\n"
-            f"            items=[\n                {items_str}\n            ]\n"
-            "        )"
+            f"    index={self.index}\n"
+            f"    origin={repr(self.origin)}\n"
+            f"    type_desc={self.type_desc}\n"
+            f"    length={repr(self.length)}\n"
+            f"    items=[\n        {items_str}\n    ]\n"
+            ")"
         )
 
     def __eq__(self, o):
-        return type(o) == JBSEHeapValueArray and self.index == o.index
+        return type(o) == JBSEHeapValueArray and self.origin == o.origin
 
     @staticmethod
     def parse(
@@ -219,18 +219,18 @@ class JBSEHeapValueClass(JBSEHeapValue):
         self.fields = fields
 
     def __repr__(self) -> str:
-        fields_str = ",\n                ".join([repr(c) for c in self.fields])
+        fields_str = ",\n        ".join([repr(c) for c in self.fields])
         return (
             "JBSEHeapValueClass(\n"
-            f"            index={self.index}\n"
-            f"            origin={repr(self.origin)}\n"
-            f"            class_desc={self.class_desc}\n"
-            f"            fields=[\n                {fields_str}\n            ]\n"
-            "        )"
+            f"    index={self.index}\n"
+            f"    origin={repr(self.origin)}\n"
+            f"    class_desc={self.class_desc}\n"
+            f"    fields=[\n        {fields_str}\n    ]\n"
+            ")"
         )
 
     def __eq__(self, o):
-        return type(o) == JBSEHeapValueClass and self.index == o.index
+        return type(o) == JBSEHeapValueClass and self.class_desc == o.class_desc
 
     @staticmethod
     def parse(

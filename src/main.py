@@ -17,7 +17,12 @@ from src.jbse.path_condition import (
 from src.jbse.symbol import JBSESymbol, JBSESymbolRef
 from src.util.arg import parse_method
 
-from src.util.z3_to_java import bv_to_java, z3_to_java
+from src.util.z3_to_java import (
+    bv_to_java,
+    z3_to_java,
+    z3_to_java_without_symmap,
+    z3_traverse_unparse_symbol,
+)
 
 
 curr_dir = os.getcwd()
@@ -100,42 +105,73 @@ class KillConditionFinder:
     def find_kill(self):
         for mutant_path in self.mutant_paths:
             for origin_path in self.origin_paths:
-                # TODO: what if both are symbolic?
-                if mutant_path.result != origin_path.result:
-                    path_condition = [*origin_path.z3_clauses, *mutant_path.z3_clauses]
+                origin_path_result = (
+                    JBSEPathResultReturn(
+                        z3_traverse_unparse_symbol(
+                            origin_path.result.value, origin_path.symmap
+                        )
+                    )
+                    if type(origin_path.result) == JBSEPathResultReturn
+                    else origin_path.result
+                )
+                mutant_path_result = (
+                    JBSEPathResultReturn(
+                        z3_traverse_unparse_symbol(
+                            mutant_path.result.value, mutant_path.symmap
+                        )
+                    )
+                    if type(mutant_path.result) == JBSEPathResultReturn
+                    else mutant_path.result
+                )
+                # print("ORI")
+                # print(origin_path_result)
+                # print("MUT")
+                # print(mutant_path_result)
+                # print("")
 
-                    # TODO: strengthen mutant_path.result != origin_path.result
-                    # TODO: support more cases
+                if origin_path_result != mutant_path_result:
+                    path_condition = [
+                        *[
+                            z3_traverse_unparse_symbol(c, origin_path.symmap)
+                            for c in origin_path.z3_clauses
+                        ],
+                        *[
+                            z3_traverse_unparse_symbol(c, mutant_path.symmap)
+                            for c in mutant_path.z3_clauses
+                        ],
+                    ]
+
                     if (
-                        type(mutant_path.result)
-                        == type(origin_path.result)
+                        type(mutant_path_result)
+                        == type(origin_path_result)
                         == JBSEPathResultReturn
                     ):
-                        if (
-                            type(mutant_path.result.value) == JavaValueSymbolic
-                            and type(origin_path.result.value) == JavaValueSimple
-                        ):
-                            symbol: JBSESymbol = mutant_path.result.value.symbol
-                            clause = PathConditionClauseAssume.parse(
-                                mutant_path.symmgr,
-                                f"({{{'R' if type(symbol) == JBSESymbolRef else 'V'}{symbol.index}}}) != ({origin_path.result.value.unparse()})",
-                            )
-                            if clause is not None:
-                                path_condition.append(clause.cond)
+                        path_condition.append(origin_path_result.value != mutant_path_result.value)
+                    #     if (
+                    #         type(mutant_path_result.value) == JavaValueSymbolic
+                    #         and type(origin_path_result.value) == JavaValueSimple
+                    #     ):
+                    #         symbol: JBSESymbol = mutant_path.result.value.symbol
+                    #         clause = PathConditionClauseAssume.parse(
+                    #             mutant_path.symmgr,
+                    #             f"({{{'R' if type(symbol) == JBSESymbolRef else 'V'}{symbol.index}}}) != ({origin_path.result.value.unparse()})",
+                    #         )
+                    #         if clause is not None:
+                    #             path_condition.append(clause.cond)
 
-                        if (
-                            type(origin_path.result.value) == JavaValueSymbolic
-                            and type(mutant_path.result.value) == JavaValueSimple
-                        ):
-                            symbol: JBSESymbol = origin_path.result.value.symbol
-                            clause = PathConditionClauseAssume.parse(
-                                origin_path.symmgr,
-                                f"({{{'R' if type(symbol) == JBSESymbolRef else 'V'}{symbol.index}}}) != ({mutant_path.result.value.unparse()})",
-                            )
-                            if clause is not None:
-                                path_condition.append(clause.cond)
+                    #     if (
+                    #         type(origin_path.result.value) == JavaValueSymbolic
+                    #         and type(mutant_path.result.value) == JavaValueSimple
+                    #     ):
+                    #         symbol: JBSESymbol = origin_path.result.value.symbol
+                    #         clause = PathConditionClauseAssume.parse(
+                    #             origin_path.symmgr,
+                    #             f"({{{'R' if type(symbol) == JBSESymbolRef else 'V'}{symbol.index}}}) != ({mutant_path.result.value.unparse()})",
+                    #         )
+                    #         if clause is not None:
+                    #             path_condition.append(clause.cond)
 
-                        # TODO: what if both are symbolic
+                    #     # TODO: what if both are symbolic
 
                     s = z3.Solver()
                     s.add(*path_condition)
@@ -144,20 +180,33 @@ class KillConditionFinder:
                         self.kill_conditions.append(
                             {
                                 "origin_pathname": origin_path.name,
-                                "origin_result": origin_path.result,
+                                "origin_result": origin_path.result.to_string(
+                                    origin_path.symmap
+                                ),
                                 "mutant_pathname": mutant_path.name,
-                                "mutant_result": mutant_path.result,
-                                "path_condition": path_condition,
+                                "mutant_result": mutant_path.result.to_string(
+                                    mutant_path.symmap
+                                ),
+                                "path_condition": z3_to_java_without_symmap(
+                                    z3.simplify(z3.And(*path_condition))
+                                ),
                             }
                         )
                     elif str(s.check()) == "unknown":
                         self.unknown_conditions.append(
                             {
                                 "origin_pathname": origin_path.name,
-                                "origin_result": origin_path.result,
+                                "origin_result": origin_path.result.to_string(
+                                    origin_path.symmap
+                                ),
                                 "mutant_pathname": mutant_path.name,
-                                "mutant_result": mutant_path.result,
-                                "path_condition": path_condition,
+                                "mutant_result": mutant_path.result.to_string(
+                                    mutant_path.symmap
+                                ),
+                                "path_condition": [
+                                    z3_to_java_without_symmap(cond)
+                                    for cond in path_condition
+                                ],
                             }
                         )
 
@@ -176,7 +225,9 @@ if __name__ == "__main__":
         required=True,
         help="Project directory path (e.g. examples/1)",
     )
-    parser.add_argument("--mutant", "-m", nargs="+", default=[], help="Mutant indices (e.g. 0 2 3)")
+    parser.add_argument(
+        "--mutant", "-m", default=None, help="Mutant indices (e.g. 0 2 3)"
+    )
     parser.add_argument("--filename", "-f", help="Filename (e.g. path4.txt)")
 
     args = parser.parse_args()
@@ -192,12 +243,7 @@ if __name__ == "__main__":
         except:
             num_models = NUM_MODELS
 
-        if len(args.mutant) > 1:
-            parser.error(
-                "There should be at most one mutant specified to run in `parse` action."
-            )
-
-        if args.mutant == []:
+        if args.mutant is None:
             target_path = os.path.join(
                 args.project, "original", args.filename or "path1.txt"
             )
@@ -205,7 +251,7 @@ if __name__ == "__main__":
             target_path = os.path.join(
                 args.project,
                 "mutants",
-                str(args.mutant[0]),
+                str(args.mutant),
                 args.filename or "path1.txt",
             )
 
@@ -219,6 +265,10 @@ if __name__ == "__main__":
         path_condition = z3.simplify(z3.And(*path.z3_clauses))
 
         if args.verbose:
+            print("Result of the path:")
+            print(path.result)
+            print("")
+
             print("Concatenation of all clauses:")
             print(path_condition)
             print("")

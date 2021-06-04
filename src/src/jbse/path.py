@@ -1,17 +1,18 @@
 from abc import ABC
 from dataclasses import dataclass
-from itertools import chain, combinations
-from typing import Tuple, Optional, Any, Union, Sequence
+from typing import Tuple, Optional, Sequence
 import re
 
 import z3
 
 from src.java.type import *
+from src.jbse.expr import *
 from src.jbse.symbol import *
 from src.jbse.symbol_manager import JBSESymbolManager
 from src.jbse.path_condition import *
 from src.jbse.heap import *
 from src.util.math import *
+from src.util.z3_to_java import z3_to_java
 
 
 @dataclass
@@ -29,12 +30,18 @@ class JBSEPathResult(ABC):
 
 @dataclass
 class JBSEPathResultReturn(JBSEPathResult):
-    value: JavaValue
+    value: z3.ExprRef
+
+    def to_string(self, symmap: dict[Sequence[Tuple[str, str]], JBSESymbol]) -> str:
+        return f"JBSEPathResultReturn(value={z3_to_java(self.value, symmap)})"
 
 
 @dataclass
 class JBSEPathResultException(JBSEPathResult):
     exception: JBSEHeapValueClass
+
+    def to_string(self, symmap: dict[Sequence[Tuple[str, str]], JBSESymbol]) -> str:
+        return str(self.exception.class_desc[1])
 
 
 @dataclass
@@ -63,7 +70,7 @@ class JBSEPath:
         return (
             "JBSEPATH(\n"
             f"    name={repr(self.name)}\n"
-            f"    ret_val={repr(self.ret_val)}\n"
+            f"    result={repr(self.result)}\n"
             f"    symmap={symmap_str}\n"
             f"    clauses=[\n        {clauses_str}\n    ]\n"
             f"    heap={heap_str}\n"
@@ -170,7 +177,7 @@ class JBSEPath:
         matched = re.search(ret_val_pattern, string)
         if matched:
             result = JBSEPathResultReturn(
-                JavaValue.parse(symmgr, matched.group(1), str(aux.methods[0][3]))
+                z3.simplify(eval_jbse_expr(symmgr, f"({matched.group(1)})"))
             )
 
         # - raised exception
