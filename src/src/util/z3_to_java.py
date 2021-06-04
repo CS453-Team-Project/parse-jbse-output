@@ -114,14 +114,14 @@ def bv_to_java(t: z3.BitVecNumRef):
     size = t.params()[1]
 
     if size == 1:
-        return 'false' if t.params()[0] == '0' else 'true'
+        return "false" if t.params()[0] == "0" else "true"
 
     if size == 8:
         val = int(t.params()[0])
-        return f'(byte){val if val < 128 else val - 256}'
+        return f"(byte){val if val < 128 else val - 256}"
 
     if size == 16:
-        return f'(char){t.params()[0]}'
+        return f"(char){t.params()[0]}"
 
     if size == 32:
         val = int(t.params()[0])
@@ -129,7 +129,7 @@ def bv_to_java(t: z3.BitVecNumRef):
 
     if size == 64:
         val = int(t.params()[0])
-        return f'{val if val < 2 ** 63 else val - 2 ** 64}L'
+        return f"{val if val < 2 ** 63 else val - 2 ** 64}L"
 
     return str(t)
 
@@ -137,6 +137,9 @@ def bv_to_java(t: z3.BitVecNumRef):
 def z3_to_java(
     t: z3.ExprRef, symmap: dict[Sequence[Tuple[str, str]], JBSESymbol]
 ) -> str:
+    if str(t) in ["True", "False"]:
+        return str(t).lower()
+
     decl = t.decl().kind()
 
     if len(t.children()) == 0:
@@ -200,7 +203,6 @@ def z3_to_java(
 
             if child.decl().kind() == Z3_OP_BV2INT:
                 return f"(double)({z3_to_java(child.chlidren()[0], symmap)})"
-
 
             return f"(double)({z3_to_java(child, symmap)})"
 

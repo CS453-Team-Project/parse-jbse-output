@@ -10,7 +10,10 @@ from glob import glob
 from src.java.type import JavaType
 from src.java.value import JavaValueFromHeap, JavaValueSimple, JavaValueSymbolic
 from src.jbse.path import JBSEPath, JBSEPathAux, JBSEPathResultReturn
-from src.jbse.path_condition import PathConditionClauseAssume
+from src.jbse.path_condition import (
+    PathConditionClauseAssume,
+    PathConditionClauseAssumeNull,
+)
 from src.jbse.symbol import JBSESymbol, JBSESymbolRef
 from src.util.arg import parse_method
 
@@ -119,7 +122,7 @@ class KillConditionFinder:
                             )
                             if clause is not None:
                                 path_condition.append(clause.cond)
-    
+
                         if (
                             type(origin_path.result.value) == JavaValueSymbolic
                             and type(mutant_path.result.value) == JavaValueSimple
@@ -162,15 +165,21 @@ class KillConditionFinder:
 if __name__ == "__main__":
     # Argument Parsing
     parser = argparse.ArgumentParser()
-    parser.add_argument("--verbose", "-v", action="store_true")
-    parser.add_argument("--target", "-t")
-    parser.add_argument("--nummodels", "-n")
-    parser.add_argument("--action", "-a", choices=["parse", "kill"])
-    parser.add_argument("--project", "-p")
-    parser.add_argument("--mutant", "-m")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Verbose mode")
+    parser.add_argument(
+        "--nummodels", "-n", default=NUM_MODELS, help="# of models (e.g. 10)"
+    )
+    parser.add_argument("--action", "-a", choices=["parse", "kill"], default="kill")
+    parser.add_argument(
+        "--project",
+        "-p",
+        required=True,
+        help="Project directory path (e.g. examples/1)",
+    )
+    parser.add_argument("--mutant", "-m", nargs="+", help="Mutant indices (e.g. 0 2 3)")
+    parser.add_argument("--filename", "-f", help="Filename (e.g. path4.txt)")
 
     args = parser.parse_args()
-    target_path = args.target
 
     with open(os.path.join(args.project, "methods.txt"), "r") as methods_file:
         methods = [l.strip() for l in methods_file.readlines()]
@@ -178,16 +187,27 @@ if __name__ == "__main__":
     action = args.action
 
     if action == "parse":
-        num_models = None
         try:
             num_models = int(args.nummodels)
         except:
-            pass
-        finally:
-            num_models = num_models or NUM_MODELS
+            num_models = NUM_MODELS
 
-        if target_path == None:
-            target_path = os.path.join(curr_dir, "examples/1/path3.txt")
+        if len(args.mutant) > 1:
+            parser.error(
+                "There should be at most one mutant specified to run in `parse` action."
+            )
+
+        if args.mutant == []:
+            target_path = os.path.join(
+                args.project, "original", args.filename or "path1.txt"
+            )
+        else:
+            target_path = os.path.join(
+                args.project,
+                "mutants",
+                str(args.mutant[0]),
+                args.filename or "path1.txt",
+            )
 
         # run main
         path, s, r, models = main(
@@ -210,7 +230,8 @@ if __name__ == "__main__":
             print("")
 
             print("Path condition in Java syntax:")
-            print(path_condition, "--->\n", z3_to_java(path_condition, path.symmap))
+            print(path_condition, "--->")
+            print("    " + z3_to_java(path_condition, path.symmap))
             print("")
 
             print("Models:")
@@ -224,13 +245,12 @@ if __name__ == "__main__":
 
                 print("   ", "Assignments:")
 
+                stringified_conditions = []
+
                 for variable in model:
                     name = variable.name()
                     variable = variable()
-
-                    print(
-                        "   ",
-                        "   ",
+                    stringified_conditions.append(
                         next(
                             (
                                 ".".join([k[1] for k in key])
@@ -238,20 +258,40 @@ if __name__ == "__main__":
                                 if value == path.symmgr.get_parse(name)
                             ),
                             None,
-                        ),
-                        "=",
-                        bv_to_java(model.evaluate(variable)),
-                        end="; \n",
+                        )
+                        + " = "
+                        + bv_to_java(model.evaluate(variable))
                     )
+
+                for clause in path.clauses:
+                    if type(clause) == PathConditionClauseAssumeNull:
+                        stringified_conditions.append(
+                            next(
+                                (
+                                    ".".join([k[1] for k in key])
+                                    for (key, value) in path.symmap.items()
+                                    if value == clause.sym_ref
+                                ),
+                                None,
+                            )
+                            + " == null",
+                        )
+
+                print(
+                    ";\n".join("        " + x for x in stringified_conditions),
+                    end=";\n",
+                )
 
         else:
-            print(z3_to_java(path_condition, path.symmap))
+            # print(z3_to_java(path_condition, path.symmap))
 
             for model, unsat_clauses in models:
+                stringified_conditions = []
+
                 for variable in model:
                     name = variable.name()
                     variable = variable()
-                    print(
+                    stringified_conditions.append(
                         next(
                             (
                                 ".".join([k[1] for k in key])
@@ -259,23 +299,27 @@ if __name__ == "__main__":
                                 if value == path.symmgr.get_parse(name)
                             ),
                             None,
-                        ),
-                        "=",
-                        bv_to_java(model.evaluate(variable)),
-                        end="; ",
+                        )
+                        + " = "
+                        + bv_to_java(model.evaluate(variable))
                     )
 
-                print("")
+                for clause in path.clauses:
+                    if type(clause) == PathConditionClauseAssumeNull:
+                        stringified_conditions.append(
+                            next(
+                                (
+                                    ".".join([k[1] for k in key])
+                                    for (key, value) in path.symmap.items()
+                                    if value == clause.sym_ref
+                                ),
+                                None,
+                            )
+                            + " == null",
+                        )
 
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument("--verbose", "-v", action="store_true")
-    # parser.add_argument("--target", "-t")
-    # parser.add_argument("--methods", "-m", nargs="+")
-    # parser.add_argument("--nummodels", "-n")
-    # parser.add_argument("--action", "-a", choices=["parse","kill"])
-    # parser.add_argument("--origin_dir")
-    # parser.add_argument("--mutant_dir")
-    # python main.py --action kill --origin_dir [origin_dir] --mutant_dir [mutant_dir]
+                print(" && ".join(stringified_conditions) + ";")
+
     if action == "kill":
         origin, mutant = glob(f"{args.project}/original/*.txt"), glob(
             f"{args.project}/mutants/{args.mutant}/*.txt"
