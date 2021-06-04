@@ -24,6 +24,9 @@ class JBSESymbol(ABC):
 
         raise ValueError("Invalid input")
 
+    def to_string_without_type(self):
+        return f"{{{'R' if type(self) == JBSESymbolRef else 'V'}{self.index}}}"
+
 
 class JBSESymbolRef(JBSESymbol):
     def __init__(self, index: int, sym_type: Optional[JavaType] = None):

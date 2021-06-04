@@ -1,4 +1,5 @@
 from abc import ABC
+from dataclasses import dataclass
 import re
 
 from ..java.type import *
@@ -24,9 +25,9 @@ class PathConditionClause(ABC):
         raise ValueError("Invalid input")
 
 
+@dataclass
 class PathConditionClauseAssume(PathConditionClause):
-    def __init__(self, cond: z3.BoolRef):
-        self.cond = cond
+    cond: z3.BoolRef
 
     @staticmethod
     def parse(symmgr: JBSESymbolManager, string: str):
@@ -41,10 +42,10 @@ class PathConditionClauseAssume(PathConditionClause):
 #         self.content = content
 
 
+@dataclass
 class PathConditionClauseAssumeExpands(PathConditionClause):
-    def __init__(self, sym_ref: JBSESymbolRef, heap_pos: int):
-        self.sym_ref = sym_ref
-        self.heap_pos = heap_pos
+    sym_ref: JBSESymbolRef
+    heap_pos: int
 
     @staticmethod
     def parse(symmgr: JBSESymbolManager, string: str):
@@ -70,9 +71,9 @@ class PathConditionClauseAssumeExpands(PathConditionClause):
 #         self.content = content
 
 
+@dataclass
 class PathConditionClauseAssumeNull(PathConditionClause):
-    def __init__(self, sym_ref: JBSESymbolRef):
-        self.sym_ref = sym_ref
+    sym_ref: JBSESymbolRef
 
     @staticmethod
     def parse(symmgr: JBSESymbolManager, string: str):

@@ -1,17 +1,14 @@
-from fnmatch import translate
 import os
 import argparse
-from typing import Tuple, Sequence
+from typing import Tuple, Sequence, Union
 
 import pprint
 import z3
 from glob import glob
+from src.java.type import JavaTypeArray, JavaTypeClass
 
-from src.java.type import JavaType
-from src.java.value import JavaValueFromHeap, JavaValueSimple, JavaValueSymbolic
 from src.jbse.path import JBSEPath, JBSEPathAux, JBSEPathResultReturn
 from src.jbse.path_condition import (
-    PathConditionClauseAssume,
     PathConditionClauseAssumeNull,
 )
 from src.jbse.symbol import JBSESymbol, JBSESymbolRef
@@ -123,11 +120,6 @@ class KillConditionFinder:
                     if type(mutant_path.result) == JBSEPathResultReturn
                     else mutant_path.result
                 )
-                # print("ORI")
-                # print(origin_path_result)
-                # print("MUT")
-                # print(mutant_path_result)
-                # print("")
 
                 if origin_path_result != mutant_path_result:
                     path_condition = [
@@ -146,12 +138,19 @@ class KillConditionFinder:
                         == type(origin_path_result)
                         == JBSEPathResultReturn
                     ):
-                        path_condition.append(origin_path_result.value != mutant_path_result.value)
+                        path_condition.append(
+                            origin_path_result.value != mutant_path_result.value
+                        )
 
                     s = z3.Solver()
                     s.add(*path_condition)
 
+                    print(path_condition)
+
                     if str(s.check()) == "sat":
+                        # inputs = get_inputs()
+                        inputs = []
+
                         self.kill_conditions.append(
                             {
                                 "origin_pathname": origin_path.name,
@@ -165,6 +164,7 @@ class KillConditionFinder:
                                 "path_condition": z3_to_java_without_symmap(
                                     z3.simplify(z3.And(*path_condition))
                                 ),
+                                "inputs": inputs,
                             }
                         )
                     elif str(s.check()) == "unknown":
@@ -324,3 +324,53 @@ if __name__ == "__main__":
 
         pprint.pprint(finder.kill_conditions)
         pprint.pprint(finder.unknown_conditions)
+
+
+def get_inputs(
+    models: Sequence[Tuple[z3.ModelRef, Sequence[int]]],
+    z3_conditions: Sequence[z3.ExprRef],
+    other_conditions: Sequence[Union[PathConditionClauseAssumeNull]],
+    param_names: Sequence[str],
+    symmap: dict[Sequence[Tuple[str, str]], JBSESymbol],
+) -> Sequence[dict[str, str]]:
+    result = []
+
+    for i, (model, unsat_clauses) in enumerate(models):
+        print("Model " + str(i) + ":")
+
+        for param_name in param_names:
+            param_dict = {}
+
+            param_key = (("{ROOT}", param_name),)
+            if param_key in symmap:
+                symbol = symmap[param_key]
+
+                # class, string, array
+                if type(symbol) == JBSESymbolRef:
+                    # string
+                    if type(symbol.type) == JavaTypeClass and symbol.type.binary_name == "java/lang/String":
+                        # null
+                        if PathConditionClauseAssumeNull(symbol) in other_conditions:
+                            param_dict[param_name] = "null"
+
+                        else:
+                            # get z3 result
+                            raise NotImplementedError
+                            
+
+
+                        
+                        raise NotImplementedError
+
+                    # other class
+                    elif type(symbol.type) == JavaTypeClass:
+                        raise NotImplementedError
+
+
+                    # array
+                    elif type(symbol.type) == JavaTypeArray:
+                        raise NotImplementedError
+
+                # primitives
+                else:
+                    raise NotImplementedError
