@@ -176,7 +176,7 @@ if __name__ == "__main__":
         required=True,
         help="Project directory path (e.g. examples/1)",
     )
-    parser.add_argument("--mutant", "-m", nargs="+", help="Mutant indices (e.g. 0 2 3)")
+    parser.add_argument("--mutant", "-m", nargs="+", default=[], help="Mutant indices (e.g. 0 2 3)")
     parser.add_argument("--filename", "-f", help="Filename (e.g. path4.txt)")
 
     args = parser.parse_args()
