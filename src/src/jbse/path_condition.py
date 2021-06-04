@@ -25,7 +25,7 @@ class PathConditionClause(ABC):
 
 
 class PathConditionClauseAssume(PathConditionClause):
-    def __init__(self, cond: z3.BoolRef):  # TODO: parse content
+    def __init__(self, cond: z3.BoolRef):
         self.cond = cond
 
     @staticmethod

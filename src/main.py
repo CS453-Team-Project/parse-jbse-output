@@ -147,31 +147,6 @@ class KillConditionFinder:
                         == JBSEPathResultReturn
                     ):
                         path_condition.append(origin_path_result.value != mutant_path_result.value)
-                    #     if (
-                    #         type(mutant_path_result.value) == JavaValueSymbolic
-                    #         and type(origin_path_result.value) == JavaValueSimple
-                    #     ):
-                    #         symbol: JBSESymbol = mutant_path.result.value.symbol
-                    #         clause = PathConditionClauseAssume.parse(
-                    #             mutant_path.symmgr,
-                    #             f"({{{'R' if type(symbol) == JBSESymbolRef else 'V'}{symbol.index}}}) != ({origin_path.result.value.unparse()})",
-                    #         )
-                    #         if clause is not None:
-                    #             path_condition.append(clause.cond)
-
-                    #     if (
-                    #         type(origin_path.result.value) == JavaValueSymbolic
-                    #         and type(mutant_path.result.value) == JavaValueSimple
-                    #     ):
-                    #         symbol: JBSESymbol = origin_path.result.value.symbol
-                    #         clause = PathConditionClauseAssume.parse(
-                    #             origin_path.symmgr,
-                    #             f"({{{'R' if type(symbol) == JBSESymbolRef else 'V'}{symbol.index}}}) != ({mutant_path.result.value.unparse()})",
-                    #         )
-                    #         if clause is not None:
-                    #             path_condition.append(clause.cond)
-
-                    #     # TODO: what if both are symbolic
 
                     s = z3.Solver()
                     s.add(*path_condition)

@@ -155,7 +155,9 @@ class JBSEPath:
                         ref_or_value = sym_match.group(1)
                         index = int(sym_match.group(2))
                         symbol = symmgr.get(ref_or_value, index)
-                        symbol.type = JavaType.parse(var_match.group(3))
+
+                        if symbol.type is None:
+                            symbol.type = JavaType.parse(var_match.group(3))
 
         # TODO: static store
 
