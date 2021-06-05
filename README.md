@@ -4,26 +4,114 @@ Python scripts to parse a JBSE output.
 
 
 ```sh
-$ python src/main.py -a parse -p examples/1 -m 0 -f "path3.txt"
+$ python src/main.py -a parse -p examples/1 -m 0
+[Path: path1.txt]
+((0<=s.value.length)&&(s.value.length<=0))
+[Path: path2.txt]
+((0<=s.value.length)&&(!(s.value.length<=0))&&(s.value[0]==(char)40))
+[Path: path3.txt]
 ((0<=s.value.length)&&(!(s.value.length<=0))&&(!(s.value[0]==(char)40)))
+[Path: path4.txt]
+(s == null)
 ```
 
 ```sh
-$ python src/main.py -v -a parse -p examples/1 -m 0 -f "path4.txt"
+$ python src/main.py -a parse -p examples/3 -m 0 -f path8.txt path2.txt path6.txt
+[Path: path8.txt]
+((!(10<=n))&&(1<=n)&&(1<=(-1+n))&&(1<=(-2+n))&&(1<=(-3+n))&&(1<=(-4+n))&&(1<=(-5+n))&&(1<=(-6+n))&&(!(1<=(-7+n))))
+[Path: path2.txt]
+((!(10<=n))&&(1<=n)&&(!(1<=(-1+n))))
+[Path: path6.txt]
+((!(10<=n))&&(1<=n)&&(1<=(-1+n))&&(1<=(-2+n))&&(1<=(-3+n))&&(1<=(-4+n))&&(!(1<=(-5+n))))
+```
+
+```sh
+$ python src/main.py -a parse -p examples/3 -m 0 -f path8.txt path2.txt path6.txt -v
+[Path: path8.txt]
+Result of the path:
+JBSEPathResultReturn(value=4294967275 + 4294967291*{V0})
+
 Concatenation of all clauses:
-True
+And(Not(10 <= {V0}),
+    1 <= {V0},
+    1 <= 4294967295 + {V0},
+    1 <= 4294967294 + {V0},
+    1 <= 4294967293 + {V0},
+    1 <= 4294967292 + {V0},
+    1 <= 4294967291 + {V0},
+    1 <= 4294967290 + {V0},
+    Not(1 <= 4294967289 + {V0}))
 
 Simplification using ctx-solver-simplify:
-[[]]
+[[1 <= 4294967290 + {V0}, Not(1 <= 4294967289 + {V0})]]
 
 Path condition in Java syntax:
-True --->
-    true
+And(Not(10 <= {V0}),
+    1 <= {V0},
+    1 <= 4294967295 + {V0},
+    1 <= 4294967294 + {V0},
+    1 <= 4294967293 + {V0},
+    1 <= 4294967292 + {V0},
+    1 <= 4294967291 + {V0},
+    1 <= 4294967290 + {V0},
+    Not(1 <= 4294967289 + {V0})) --->
+    ((!(10<=n))&&(1<=n)&&(1<=(-1+n))&&(1<=(-2+n))&&(1<=(-3+n))&&(1<=(-4+n))&&(1<=(-5+n))&&(1<=(-6+n))&&(!(1<=(-7+n))))
 
 Models:
 Model 0:
     Assignments:
-        s == null;
+        n = 7;
+
+[Path: path2.txt]
+Result of the path:
+JBSEPathResultReturn(value={V0})
+
+Concatenation of all clauses:
+And(Not(10 <= {V0}), 1 <= {V0}, Not(1 <= 4294967295 + {V0}))
+
+Simplification using ctx-solver-simplify:
+[[1 <= {V0}, Not(1 <= 4294967295 + {V0})]]
+
+Path condition in Java syntax:
+And(Not(10 <= {V0}), 1 <= {V0}, Not(1 <= 4294967295 + {V0})) --->
+    ((!(10<=n))&&(1<=n)&&(!(1<=(-1+n))))
+
+Models:
+Model 0:
+    Assignments:
+        n = 1;
+
+[Path: path6.txt]
+Result of the path:
+JBSEPathResultReturn(value=4294967286 + 4294967293*{V0})
+
+Concatenation of all clauses:
+And(Not(10 <= {V0}),
+    1 <= {V0},
+    1 <= 4294967295 + {V0},
+    1 <= 4294967294 + {V0},
+    1 <= 4294967293 + {V0},
+    1 <= 4294967292 + {V0},
+    Not(1 <= 4294967291 + {V0}))
+
+Simplification using ctx-solver-simplify:
+[[1 <= 4294967292 + {V0}, Not(1 <= 4294967291 + {V0})]]
+
+Path condition in Java syntax:
+And(Not(10 <= {V0}),
+    1 <= {V0},
+    1 <= 4294967295 + {V0},
+    1 <= 4294967294 + {V0},
+    1 <= 4294967293 + {V0},
+    1 <= 4294967292 + {V0},
+    Not(1 <= 4294967291 + {V0})) --->
+    ((!(10<=n))&&(1<=n)&&(1<=(-1+n))&&(1<=(-2+n))&&(1<=(-3+n))&&(1<=(-4+n))&&(!(1<=(-5+n))))
+
+Models:
+Model 0:
+    Assignments:
+        n = 5;
+
 ```
 
 ```sh
