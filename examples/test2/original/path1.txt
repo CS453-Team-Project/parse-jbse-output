@@ -1,0 +1,76 @@
+.1.2[1] 
+Leaf state, raised exception: Object[4254]
+Path condition: 
+	{R0} == Object[4253] (fresh) &&
+	{R1} == null
+	where:
+	{R0} == {ROOT}:this &&
+	{R1} == {ROOT}:scoville
+Static store: {
+	Class[(0, java/lang/NullPointerException)]: {
+		Origin: [java/lang/NullPointerException]
+		Field[0]: Name: serialVersionUID, Type: J, Value: 5162710183389028792L (type: J)
+	}
+	Class[(0, java/lang/String)]: {
+		Origin: [java/lang/String]
+		Field[0]: Name: CASE_INSENSITIVE_ORDER, Type: Ljava/util/Comparator;, Value: Object[16] (type: L)
+		Field[1]: Name: serialPersistentFields, Type: [Ljava/io/ObjectStreamField;, Value: Object[15] (type: L)
+		Field[2]: Name: serialVersionUID, Type: J, Value: -6849794470754667710L (type: J)
+	}
+}
+Heap: {
+	Object[4253]: {
+		Origin: {ROOT}:this
+		Class: (2,com/cs453/group5/examples/PriQueue)
+	}
+	Object[4254]: {
+		Class: (0,java/lang/NullPointerException)
+		Field[0]: Name: detailMessage, Type: Ljava/lang/String;, Value: null (type: 0)
+		Field[1]: Name: cause, Type: Ljava/lang/Throwable;, Value: null (type: 0)
+		Field[2]: Name: backtrace, Type: Ljava/lang/Object;, Value: Object[4255] (type: L)
+		Field[3]: Name: stackTrace, Type: [Ljava/lang/StackTraceElement;, Value: null (type: 0)
+		Field[4]: Name: suppressedExceptions, Type: Ljava/util/List;, Value: null (type: 0)
+	}
+	Object[4255]: {
+		Type: (0,[Ljava/lang/StackTraceElement;)
+		Length: 1
+		Items: {Object[4262]}
+	}
+	Object[4256]: {
+		Type: (0,[C)
+		Length: 34
+		Items: {"com.cs453.group5.examples.PriQueue"}
+	}
+	Object[4257]: {
+		Class: (0,java/lang/String)
+		Field[0]: Name: hash, Type: I, Value: -1468633200 (type: I)
+		Field[1]: Name: value, Type: [C, Value: Object[4256] (type: L)
+	}
+	Object[4258]: {
+		Type: (0,[C)
+		Length: 13
+		Items: {"PriQueue.java"}
+	}
+	Object[4259]: {
+		Class: (0,java/lang/String)
+		Field[0]: Name: hash, Type: I, Value: -293493050 (type: I)
+		Field[1]: Name: value, Type: [C, Value: Object[4258] (type: L)
+	}
+	Object[4260]: {
+		Type: (0,[C)
+		Length: 8
+		Items: {"solution"}
+	}
+	Object[4261]: {
+		Class: (0,java/lang/String)
+		Field[0]: Name: hash, Type: I, Value: 1491946873 (type: I)
+		Field[1]: Name: value, Type: [C, Value: Object[4260] (type: L)
+	}
+	Object[4262]: {
+		Class: (0,java/lang/StackTraceElement)
+		Field[0]: Name: lineNumber, Type: I, Value: -1 (type: I)
+		Field[1]: Name: fileName, Type: Ljava/lang/String;, Value: Object[4259] (type: L)
+		Field[2]: Name: methodName, Type: Ljava/lang/String;, Value: Object[4261] (type: L)
+		Field[3]: Name: declaringClass, Type: Ljava/lang/String;, Value: Object[4257] (type: L)
+	}
+}

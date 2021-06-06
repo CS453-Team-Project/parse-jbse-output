@@ -102,6 +102,28 @@ class KillConditionFinder:
     def find_kill(self):
         for mutant_path in self.mutant_paths:
             for origin_path in self.origin_paths:
+                # Check null references
+                def get_null_refs(path: JBSEPath) -> Sequence[str]:
+                    result = [
+                        (
+                            next(
+                                (
+                                    ".".join(name for _, name in key)
+                                    for key, symbol in path.symmap.items()
+                                    if symbol == clause.sym_ref
+                                ),
+                                None,
+                            )
+                        )
+                        for clause in path.clauses
+                        if type(clause) == PathConditionClauseAssumeNull
+                    ]
+                    result = [item for item in result if item is not None]
+                    return set(result)
+
+                if get_null_refs(origin_path) != get_null_refs(mutant_path):
+                    continue
+
                 origin_path_result = (
                     JBSEPathResultReturn(
                         z3_traverse_unparse_symbol(
@@ -144,8 +166,6 @@ class KillConditionFinder:
 
                     s = z3.Solver()
                     s.add(*path_condition)
-
-                    print(path_condition)
 
                     if str(s.check()) == "sat":
                         # inputs = get_inputs()

@@ -11,9 +11,9 @@ public class Calculator {
     // 1. (D)I:getSign
     public int getSign(double number) {
         int result = 0;
-        if (number > (float) (1L - 1)) {
+        if (number > (double) (1L - 1)) {
             result = 1;
-        } else if (number - ((float)number + number) > 0L) {
+        } else if (number - ((double)number + number) > 0L) {
             result = -1;
         }
 		return result;

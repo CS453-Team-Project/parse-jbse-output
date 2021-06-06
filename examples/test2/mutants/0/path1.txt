@@ -1,0 +1,47 @@
+.1.1.2.2.2.2.2.2.1.2.2[501] 
+Leaf state, returned value: 1
+Path condition: 
+	{R0} == Object[4253] (fresh) &&
+	{R1} == Object[4255] (fresh) &&
+	({V2}) >= (0) &&
+	({V2}) == (2) &&
+	({V5}) <= (5) &&
+	({V6}) <= (5) &&
+	({V5}) > (0) &&
+	({V6}) > (0) &&
+	({V0}) <= (2) &&
+	({V6}) == (3) &&
+	({V5}) == (1) &&
+	({V0}) > (1)
+	where:
+	{R0} == {ROOT}:this &&
+	{R1} == {ROOT}:scoville &&
+	{V2} == {ROOT}:scoville.length &&
+	{V5} == {ROOT}:scoville[1] &&
+	{V6} == {ROOT}:scoville[0] &&
+	{V0} == {ROOT}:k
+Static store: {
+}
+Heap: {
+	Object[4253]: {
+		Origin: {ROOT}:this
+		Class: (2,com/cs453/group5/examples/PriQueue)
+	}
+	Object[4254]: {
+		Origin: {ROOT}:scoville (initial)
+		Type: (0,[I)
+		Length: {V2}
+		Items: {
+			({INDEX-2068086498}) >= (0) && ({INDEX-2068086498}) < ({V2}) && ({INDEX-2068086498}) == (1) -> {V5}
+			({INDEX-2068086498}) >= (0) && ({INDEX-2068086498}) < ({V2}) && ({INDEX-2068086498}) == (0) -> {V6}
+		}
+	}
+	Object[4255]: {
+		Origin: {ROOT}:scoville
+		Type: (0,[I)
+		Length: {V2}
+		Items: {
+			({INDEX-40790487}) >= (0) && ({INDEX-40790487}) < ({V2}) -> Object[4254][_ + 0]
+		}
+	}
+}
