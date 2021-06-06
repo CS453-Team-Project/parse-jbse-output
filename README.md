@@ -16,7 +16,7 @@ $ python src/main.py -a parse -p examples/1 -m 0
 ```
 
 ```sh
-$ python src/main.py -a parse -p examples/3 -m 0 -f path8.txt path2.txt path6.txt
+$ python src/main.py -a parse -p examples/2 -m 0 -f path8.txt path2.txt path6.txt
 [Path: path8.txt]
 ((!(10<=n))&&(1<=n)&&(1<=(-1+n))&&(1<=(-2+n))&&(1<=(-3+n))&&(1<=(-4+n))&&(1<=(-5+n))&&(1<=(-6+n))&&(!(1<=(-7+n))))
 [Path: path2.txt]
@@ -26,7 +26,7 @@ $ python src/main.py -a parse -p examples/3 -m 0 -f path8.txt path2.txt path6.tx
 ```
 
 ```sh
-$ python src/main.py -a parse -p examples/3 -m 0 -f path8.txt path2.txt path6.txt -v
+$ python src/main.py -a parse -p examples/2 -m 0 -f path8.txt path2.txt path6.txt -v
 [Path: path8.txt]
 Result of the path:
 JBSEPathResultReturn(value=4294967275 + 4294967291*{V0})

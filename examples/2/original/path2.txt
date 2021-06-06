@@ -1,12 +1,13 @@
-.1.2.1[4] 
-Leaf state, returned value: -1
+.1.1.2.1[4] 
+Leaf state, returned value: {V0}
 Path condition: 
 	{R0} == Object[4326] (fresh) &&
-	({V0}) <= (0.0d) &&
-	({V0}) - ((WIDEN-FD(NARROW-DF({V0}))) + ({V0})) > (0.0d)
+	({V0}) < (10) &&
+	({V0}) >= (1) &&
+	({V0}) - (1) < (1)
 	where:
 	{R0} == {ROOT}:this &&
-	{V0} == {ROOT}:number
+	{V0} == {ROOT}:n
 Static store: {
 	
 }

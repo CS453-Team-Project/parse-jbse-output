@@ -1,11 +1,12 @@
-.1.1[5] 
-Leaf state, returned value: 1
+.1.1.1[2] 
+Leaf state, returned value: 0
 Path condition: 
 	{R0} == Object[4326] (fresh) &&
-	({V0}) > (0.0d)
+	({V0}) < (10) &&
+	({V0}) < (1)
 	where:
 	{R0} == {ROOT}:this &&
-	{V0} == {ROOT}:number
+	{V0} == {ROOT}:n
 Static store: {
 	
 }

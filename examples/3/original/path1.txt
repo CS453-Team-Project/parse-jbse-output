@@ -1,19 +1,115 @@
-.1.1.1[2] 
-Leaf state, returned value: 0
+.1.1.2.2.2.2[222] 
+Leaf state
 Path condition: 
-	{R0} == Object[4326] (fresh) &&
-	({V0}) < (10) &&
-	({V0}) < (1)
+	{R0} == Object[4253] (fresh) &&
+	{R1} == Object[4255] (fresh) &&
+	({V2}) >= (0) &&
+	({V2}) == (2) &&
+	({V5}) == (3) &&
+	({V6}) == (2) &&
+	({V0}) <= (2)
 	where:
 	{R0} == {ROOT}:this &&
-	{V0} == {ROOT}:n
+	{R1} == {ROOT}:scoville &&
+	{V2} == {ROOT}:scoville.length &&
+	{V5} == {ROOT}:scoville[1] &&
+	{V6} == {ROOT}:scoville[0] &&
+	{V0} == {ROOT}:k
 Static store: {
-	
+	Class[(0, java/lang/Integer)]: {
+		Origin: [java/lang/Integer]
+		Field[0]: Name: TYPE, Type: Ljava/lang/Class;, Value: Object[490] (type: L)
+		Field[1]: Name: MAX_VALUE, Type: I, Value: 2147483647 (type: I)
+		Field[2]: Name: digits, Type: [C, Value: Object[1876] (type: L)
+		Field[3]: Name: sizeTable, Type: [I, Value: Object[1879] (type: L)
+		Field[4]: Name: serialVersionUID, Type: J, Value: 1360826667806852920L (type: J)
+		Field[5]: Name: MIN_VALUE, Type: I, Value: -2147483648 (type: I)
+		Field[6]: Name: SIZE, Type: I, Value: 32 (type: I)
+		Field[7]: Name: BYTES, Type: I, Value: 4 (type: I)
+		Field[8]: Name: DigitTens, Type: [C, Value: Object[1877] (type: L)
+		Field[9]: Name: DigitOnes, Type: [C, Value: Object[1878] (type: L)
+	}
+	Class[(0, java/util/PriorityQueue)]: {
+		Origin: [java/util/PriorityQueue]
+		Field[0]: Name: serialVersionUID, Type: J, Value: -7720805057305804111L (type: J)
+		Field[1]: Name: DEFAULT_INITIAL_CAPACITY, Type: I, Value: 11 (type: I)
+		Field[2]: Name: MAX_ARRAY_SIZE, Type: I, Value: 2147483639 (type: I)
+	}
 }
 Heap: {
-	Object[4326]: {
-		Origin: {ROOT}:this
-		Class: (2,com/cs453/group5/examples/Calculator)
+	Object[2012]: {
+		Class: (0,java/lang/Integer)
+		Field[0]: Name: value, Type: I, Value: 2 (type: I)
 	}
-	
+	Object[2013]: {
+		Class: (0,java/lang/Integer)
+		Field[0]: Name: value, Type: I, Value: 3 (type: I)
+	}
+	Object[4253]: {
+		Origin: {ROOT}:this
+		Class: (2,com/cs453/group5/examples/PriQueue)
+	}
+	Object[4254]: {
+		Origin: {ROOT}:scoville (initial)
+		Type: (0,[I)
+		Length: {V2}
+		Items: {
+			({INDEX-1946297548}) >= (0) && ({INDEX-1946297548}) < ({V2}) && ({INDEX-1946297548}) == (1) -> {V5}
+			({INDEX-1946297548}) >= (0) && ({INDEX-1946297548}) < ({V2}) && ({INDEX-1946297548}) == (0) -> {V6}
+		}
+	}
+	Object[4255]: {
+		Origin: {ROOT}:scoville
+		Type: (0,[I)
+		Length: {V2}
+		Items: {
+			({INDEX-1931451243}) >= (0) && ({INDEX-1931451243}) < ({V2}) -> Object[4254][_ + 0]
+		}
+	}
+	Object[4256]: {
+		Class: (0,java/util/PriorityQueue)
+		Field[0]: Name: size, Type: I, Value: 2 (type: I)
+		Field[1]: Name: comparator, Type: Ljava/util/Comparator;, Value: null (type: 0)
+		Field[2]: Name: queue, Type: [Ljava/lang/Object;, Value: Object[4257] (type: L)
+		Field[3]: Name: modCount, Type: I, Value: 2 (type: I)
+	}
+	Object[4257]: {
+		Type: (0,[Ljava/lang/Object;)
+		Length: 11
+		Items: {Object[2012], Object[2013], null, null, null, null, null, null, null, null, null}
+	}
+}
+Stack: {
+	Frame[0]: {
+		Method signature: com/cs453/group5/examples/PriQueue:([II)I:solution
+		Program counter: 111
+		Program counter after return: 114
+		Next bytecode: INVOKESTATIC jbse/meta/Analysis:(Z)V:ass3rt [66]
+		Source line: (14): <UNKNOWN>
+		Operand Stack: {
+		}
+		Local Variables: {
+			Variable[0]: Name: this, Type: Lcom/cs453/group5/examples/PriQueue;, Value: {R0} == Object[4253] (type: L)
+			Variable[1]: Name: scoville, Type: [I, Value: {R1} == Object[4255] (type: L)
+			Variable[2]: Name: k, Type: I, Value: {V0} (type: I)
+			Variable[3]: Name: answer, Type: I, Value: 0 (type: I)
+			Variable[4]: Name: heap, Type: Ljava/util/PriorityQueue;, Value: Object[4256] (type: L)
+			Variable[5]: Name: __LOCAL[5], Type: ?, Value: {R1} == Object[4255] (type: L)
+			Variable[6]: Name: __LOCAL[6], Type: ?, Value: {V2} (type: I)
+			Variable[7]: Name: __LOCAL[7], Type: ?, Value: 2 (type: I)
+			Variable[8]: Name: __LOCAL[8], Type: ?, Value: {V5} (type: I)
+		}
+	}
+	Frame[1]: {
+		Method signature: jbse/meta/Analysis:(Z)V:ass3rt
+		Program counter: 4
+		Program counter after return: <UNKNOWN>
+		Next bytecode: INVOKESTATIC jbse/meta/Analysis:()V:fail [118]
+		Source line: (119): <UNKNOWN>
+		Operand Stack: {
+		}
+		Local Variables: {
+			Variable[0]: Name: b, Type: Z, Value: false (type: Z)
+		}
+	}	
 }
