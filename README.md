@@ -116,52 +116,91 @@ Model 0:
 
 ```sh
 $ python src/main.py -v -a kill -p examples/1 -m 0
-[{'mutant_pathname': '.1.1.1[331]',
-  'mutant_result': 'java/lang/StringIndexOutOfBoundsException',
-  'origin_pathname': '.1.2[2]',
-  'origin_result': 'java/lang/NullPointerException',
-  'path_condition': '((0<=s.value.length)&&(s.value.length<=0))'},
- {'mutant_pathname': '.1.1.2.1[7]',
-  'mutant_result': 'JBSEPathResultReturn(value=s.value.length)',
+[{'inputs': [{'s': ('"("', Ljava/lang/String;)},
+             {'s': ('"(??"', Ljava/lang/String;)},
+             {'s': ('"(?"', Ljava/lang/String;)},
+             {'s': ('"(???"', Ljava/lang/String;)}],
+  'mutant_pathname': '.1.1.2.1[7]',
+  'mutant_result_description': 'returned s.value.length',
+  'mutant_result_string': 'JBSEPathResultReturn(value=s.value.length)',
   'origin_pathname': '.1.1.2.2[2]',
-  'origin_result': 'JBSEPathResultReturn(value=-2)',
-  'path_condition': '((0<=s.value.length)&&(!(s.value.length<=0))&&(s.value[0]==(char)40)&&(!(s.value.length==-2)))'},
- {'mutant_pathname': '.1.1.2.1[7]',
-  'mutant_result': 'JBSEPathResultReturn(value=s.value.length)',
-  'origin_pathname': '.1.2[2]',
-  'origin_result': 'java/lang/NullPointerException',
-  'path_condition': '((0<=s.value.length)&&(!(s.value.length<=0))&&(s.value[0]==(char)40))'},
- {'mutant_pathname': '.1.1.2.2[2]',
-  'mutant_result': 'JBSEPathResultReturn(value=-2)',
+  'origin_result_description': 'returned -2',
+  'origin_result_string': 'JBSEPathResultReturn(value=-2)',
+  'path_condition': '((0<=s.value.length)&&(!(s.value.length<=0))&&(s.value[0]==(char) '
+                    '40)&&(!(s.value.length==-2)))'},
+ {'inputs': [{'s': ('"\\u0000?"', Ljava/lang/String;)},
+             {'s': ('"\\u0000"', Ljava/lang/String;)},
+             {'s': ('"\\u0002"', Ljava/lang/String;)},
+             {'s': ('"\\u0002?"', Ljava/lang/String;)}],
+  'mutant_pathname': '.1.1.2.2[2]',
+  'mutant_result_description': 'returned -2',
+  'mutant_result_string': 'JBSEPathResultReturn(value=-2)',
   'origin_pathname': '.1.1.2.1[7]',
-  'origin_result': 'JBSEPathResultReturn(value=s.value.length)',
-  'path_condition': '((0<=s.value.length)&&(!(s.value.length<=0))&&(!(s.value[0]==(char)40))&&(!(s.value.length==-2)))'},
- {'mutant_pathname': '.1.1.2.2[2]',
-  'mutant_result': 'JBSEPathResultReturn(value=-2)',
-  'origin_pathname': '.1.2[2]',
-  'origin_result': 'java/lang/NullPointerException',
-  'path_condition': '((0<=s.value.length)&&(!(s.value.length<=0))&&(!(s.value[0]==(char)40)))'},
- {'mutant_pathname': '.1.2[2]',
-  'mutant_result': 'java/lang/NullPointerException',
-  'origin_pathname': '.1.1.1[331]',
-  'origin_result': 'java/lang/StringIndexOutOfBoundsException',
-  'path_condition': '((0<=s.value.length)&&(s.value.length<=0))'},
- {'mutant_pathname': '.1.2[2]',
-  'mutant_result': 'java/lang/NullPointerException',
-  'origin_pathname': '.1.1.2.1[7]',
-  'origin_result': 'JBSEPathResultReturn(value=s.value.length)',
-  'path_condition': '((0<=s.value.length)&&(!(s.value.length<=0))&&(!(s.value[0]==(char)40)))'},
- {'mutant_pathname': '.1.2[2]',
-  'mutant_result': 'java/lang/NullPointerException',
-  'origin_pathname': '.1.1.2.2[2]',
-  'origin_result': 'JBSEPathResultReturn(value=-2)',
-  'path_condition': '((0<=s.value.length)&&(!(s.value.length<=0))&&(s.value[0]==(char)40))'}]
+  'origin_result_description': 'returned s.value.length',
+  'origin_result_string': 'JBSEPathResultReturn(value=s.value.length)',
+  'path_condition': '((0<=s.value.length)&&(!(s.value.length<=0))&&(!(s.value[0]==(char) '
+                    '40))&&(!(s.value.length==-2)))'}]
 []
+
+JUnit tests:
+
+@Test
+@DisplayName("Original path .1.1.2.2[2] (returned -2) <-> Mutant 0's path .1.1.2.1[7] (returned s.value.length)")
+public void test0() {
+    com.cs453.group5.examples.Calculator myCalculator = com.cs453.group5.examples.Calculator();
+
+    java.lang.String s;
+    s = "(";
+    assertEquals(myCalculator.getLength(s), -2);
+    s = "(??";
+    assertEquals(myCalculator.getLength(s), -2);
+    s = "(?";
+    assertEquals(myCalculator.getLength(s), -2);
+    s = "(???";
+    assertEquals(myCalculator.getLength(s), -2);
+}
+
+@Test
+@DisplayName("Original path .1.1.2.1[7] (returned s.value.length) <-> Mutant 0's path .1.1.2.2[2] (returned -2)")
+public void test1() {
+    com.cs453.group5.examples.Calculator myCalculator = com.cs453.group5.examples.Calculator();
+
+    java.lang.String s;
+    s = "\u0000?";
+    assertEquals(myCalculator.getLength(s), s.value.length);
+    s = "\u0000";
+    assertEquals(myCalculator.getLength(s), s.value.length);
+    s = "\u0002";
+    assertEquals(myCalculator.getLength(s), s.value.length);
+    s = "\u0002?";
+    assertEquals(myCalculator.getLength(s), s.value.length);
+}
 ```
 
-# TODO
-* Additional assumption clauses
-    + Length of String instances
-    + Length of array primitives
-* Java test code generation?
+```sh
+$ python src/main.py -a kill -p examples/6 -m 0
+@Test
+@DisplayName("Original path .1.1.1.1.1.1[5] (returned (3+this.a)) <-> Mutant 0's path .1.1.1.1.1.1[5] (returned (3+(-1*this.a)))")
+public void test0() {
+    com.cs453.group5.examples.Calculator myCalculator = com.cs453.group5.examples.Calculator();
 
+    boolean[][] z;
+    int this.a;
+
+    z = [[true, false], []];
+    this.a = 1073741824;
+    assertEquals(myCalculator.arrarr(z), (3+this.a));
+
+    z = [[true, false], [], []];
+    this.a = 1073741824;
+    assertEquals(myCalculator.arrarr(z), (3+this.a));
+
+    z = [[true]];
+    this.a = 1073741824;
+    assertEquals(myCalculator.arrarr(z), (3+this.a));
+
+    z = [[true, false, false], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []];
+    this.a = 1073741824;
+    assertEquals(myCalculator.arrarr(z), (3+this.a));
+}
+```

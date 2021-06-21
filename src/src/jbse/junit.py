@@ -34,7 +34,7 @@ def inputs_to_junits(
         if type(val) == str:
             return val
 
-        return f"[{', '.join([flatten_input_value(item) for item in val])}]"
+        return f"[{', '.join([flatten_input_value(item) for item, _ in val])}]"
 
     binary_name, method_name, params, return_type = methods[0]
     binary_name = binary_name.replace("/", ".")
@@ -64,6 +64,7 @@ def inputs_to_junits(
         lines.append(f"    {var_type.to_string()} {var};")
 
     for input in inputs:
+        lines.append("")
         for var, (val, _) in input.items():
             lines.append(f"    {var} = {flatten_input_value(val)};")
 

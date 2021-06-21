@@ -334,7 +334,7 @@ def get_inputs(
                     if i in array_conditions:
                         array.append(array_conditions[i])
                     else:
-                        array.append([])
+                        array.append(([], inner_type))
 
                 cases[array_variable] = (array, JavaTypeArray(inner_type))
 
@@ -361,7 +361,7 @@ def get_inputs(
                     if i in array_conditions:
                         array.append(array_conditions[i])
                     else:
-                        array.append("")
+                        array.append(("", inner_type))
 
                 cases[array_variable] = (array, JavaTypeArray(inner_type))
 
@@ -404,31 +404,31 @@ def get_inputs(
                         v = array_conditions[i]
 
                         if inner_type == JavaTypeBoolean():
-                            array.append("false" if v == 0 else "true")
+                            array.append(("false" if v == 0 else "true", inner_type))
                         if inner_type == JavaTypeByte():
-                            array.append(f"(byte) {v if v < 128 else v - 256}")
+                            array.append((f"(byte) {v if v < 128 else v - 256}", inner_type))
                         if inner_type == JavaTypeChar():
-                            array.append(f"'{chr(v)}'" if v != 0 else "'\\u0000'")
+                            array.append((f"'{chr(v)}'" if v != 0 else "'\\u0000'", inner_type))
                         if inner_type == JavaTypeDouble():
-                            array.append(v)
+                            array.append((v, inner_type))
                         if inner_type == JavaTypeInt():
-                            array.append(str(v if v < 2 ** 31 else v - 2 ** 32))
+                            array.append((str(v if v < 2 ** 31 else v - 2 ** 32), inner_type))
                         if inner_type == JavaTypeLong():
-                            array.append(f"{v if v < 2 ** 63 else v - 2 ** 64}L")
+                            array.append((f"{v if v < 2 ** 63 else v - 2 ** 64}L", inner_type))
 
                     else:
                         if inner_type == JavaTypeBoolean():
-                            array.append("false")
+                            array.append(("false", inner_type))
                         if inner_type == JavaTypeByte():
-                            array.append("(byte) 0")
+                            array.append(("(byte) 0", inner_type))
                         if inner_type == JavaTypeChar():
-                            array.append("'?'")
+                            array.append(("'?'", inner_type))
                         if inner_type == JavaTypeDouble():
-                            array.append("0.0d")
+                            array.append(("0.0d", inner_type))
                         if inner_type == JavaTypeInt():
-                            array.append("0")
+                            array.append(("0", inner_type))
                         if inner_type == JavaTypeLong():
-                            array.append("0L")
+                            array.append(("0L", inner_type))
 
                 cases[array_variable] = (array, JavaTypeArray(inner_type))
 
