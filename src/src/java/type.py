@@ -120,45 +120,72 @@ class JavaTypeVoid(JavaType):
     def __repr__(self):
         return "V"
 
+    def to_string(self):
+        return "void"
+
 
 class JavaTypeBoolean(JavaType):
     def __repr__(self):
         return "Z"
+
+    def to_string(self):
+        return "boolean"
 
 
 class JavaTypeByte(JavaType):
     def __repr__(self):
         return "B"
 
+    def to_string(self):
+        return "byte"
+
 
 class JavaTypeChar(JavaType):
     def __repr__(self):
         return "C"
+
+    def to_string(self):
+        return "char"
 
 
 class JavaTypeDouble(JavaType):
     def __repr__(self):
         return "D"
 
+    def to_string(self):
+        return "double"
+
 
 class JavaTypeFloat(JavaType):
     def __repr__(self):
         return "F"
+
+    def to_string(self):
+        return "float"
 
 
 class JavaTypeShort(JavaType):
     def __repr__(self):
         return "S"
 
+    def to_string(self):
+        return "short"
+
 
 class JavaTypeInt(JavaType):
     def __repr__(self):
         return "I"
 
+    def to_string(self):
+        return "int"
+
 
 class JavaTypeLong(JavaType):
     def __repr__(self):
         return "J"
+
+    def to_string(self):
+        return "long"
 
 
 class JavaTypeClass(JavaType):
@@ -168,6 +195,9 @@ class JavaTypeClass(JavaType):
     def __repr__(self):
         return f"L{self.binary_name};"
 
+    def to_string(self):
+        return self.binary_name.replace("/", ".")
+
 
 class JavaTypeArray(JavaType):
     def __init__(self, inner: JavaType):
@@ -175,3 +205,6 @@ class JavaTypeArray(JavaType):
 
     def __repr__(self):
         return f"[{repr(self.inner)}"
+
+    def to_string(self):
+        return f"{self.inner.to_string()}[]"

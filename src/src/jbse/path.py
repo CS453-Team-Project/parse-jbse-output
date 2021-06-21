@@ -35,13 +35,23 @@ class JBSEPathResultReturn(JBSEPathResult):
     def to_string(self, symmap: dict[Sequence[Tuple[str, str]], JBSESymbol]) -> str:
         return f"JBSEPathResultReturn(value={z3_to_java(self.value, symmap)})"
 
+    def to_description(
+        self, symmap: dict[Sequence[Tuple[str, str]], JBSESymbol]
+    ) -> str:
+        return f"returned {z3_to_java(self.value, symmap)}"
+
 
 @dataclass
 class JBSEPathResultException(JBSEPathResult):
     exception: JBSEHeapValueClass
 
     def to_string(self, symmap: dict[Sequence[Tuple[str, str]], JBSESymbol]) -> str:
-        return str(self.exception.class_desc[1])
+        return f"JBSEPathResultException(exception={str(self.exception.class_desc[1])}"
+
+    def to_description(
+        self, symmap: dict[Sequence[Tuple[str, str]], JBSESymbol]
+    ) -> str:
+        return f"raised {z3_to_java(self.exception.class_desc[1], symmap)}"
 
 
 @dataclass
@@ -238,13 +248,8 @@ class JBSEPath:
                     )
 
             # 2. Array
-            if (
-                type(symbol) == JBSESymbolRef
-                and type(symbol.type) == JavaTypeArray
-            ):
-                length_key = tuple(
-                    [*key, (None, "length")]
-                )
+            if type(symbol) == JBSESymbolRef and type(symbol.type) == JavaTypeArray:
+                length_key = tuple([*key, (None, "length")])
                 if length_key in self.symmap:
                     length_symbol = self.symmap[length_key]
 
