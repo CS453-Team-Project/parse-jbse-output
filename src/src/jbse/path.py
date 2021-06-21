@@ -201,6 +201,63 @@ class JBSEPath:
         # TODO: which clauses should be put into the z3 solver?
         return [c.cond for c in self.clauses if type(c) == PathConditionClauseAssume]
 
+    @property
+    def null_clauses(self):
+        # TODO: currently, PathConditionClauseAssumeNull is the only case
+        return [c for c in self.clauses if type(c) == PathConditionClauseAssumeNull]
+
+    @property
+    def feasibility_assumptions(self):
+        assumptions = []
+
+        MAX_STRING_LEN = 200
+        MAX_ARRAY_LEN = 20
+
+        # TODO: which assumptions are necessary to generate feasible test cases?
+        for key in self.symmap:
+            symbol = self.symmap[key]
+
+            # 1. String
+            if (
+                type(symbol) == JBSESymbolRef
+                and type(symbol.type) == JavaTypeClass
+                and symbol.type.binary_name == "java/lang/String"
+            ):
+                length_key = tuple(
+                    [*key, ("java/lang/String", "value"), (None, "length")]
+                )
+                if length_key in self.symmap:
+                    length_symbol = self.symmap[length_key]
+
+                    name = length_symbol.to_string_without_type()
+                    assumptions.extend(
+                        [
+                            z3.BitVec(name, 32) >= z3.BitVecVal(0, 32),
+                            z3.BitVec(name, 32) < z3.BitVecVal(MAX_STRING_LEN, 32),
+                        ]
+                    )
+
+            # 2. Array
+            if (
+                type(symbol) == JBSESymbolRef
+                and type(symbol.type) == JavaTypeArray
+            ):
+                length_key = tuple(
+                    [*key, (None, "length")]
+                )
+                if length_key in self.symmap:
+                    length_symbol = self.symmap[length_key]
+
+                    name = length_symbol.to_string_without_type()
+                    assumptions.extend(
+                        [
+                            z3.BitVec(name, 32) >= z3.BitVecVal(0, 32),
+                            z3.BitVec(name, 32) < z3.BitVecVal(MAX_ARRAY_LEN, 32),
+                        ]
+                    )
+
+        return assumptions
+
     def solve(
         self, num_models: int
     ) -> Tuple[

@@ -119,10 +119,10 @@ def bv_to_java(t: z3.BitVecNumRef):
 
     if size == 8:
         val = int(t.params()[0])
-        return f"(byte){val if val < 128 else val - 256}"
+        return f"(byte) {val if val < 128 else val - 256}"
 
     if size == 16:
-        return f"(char){t.params()[0]}"
+        return f"(char) {t.params()[0]}"
 
     if size == 32:
         val = int(t.params()[0])

@@ -3,7 +3,7 @@ from typing import Tuple
 from src.java.type import JavaType
 
 
-def parse_method(method: str) -> list[Tuple[str, str, dict, JavaType]]:
+def parse_method(method: str) -> Tuple[str, str, dict, JavaType]:
     """
     Example:
         * input: "java/sdlka/Calculator:sampleMethod:(I[Z)V:num:boolArr"

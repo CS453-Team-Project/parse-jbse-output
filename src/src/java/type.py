@@ -38,24 +38,36 @@ class JavaType(ABC):
         }
 
         if type_desc[0] == "[":
-            matched = re.match(r"(V|Z|B|C|D|F|S|I|J|L(.*?);)", type_desc[1:])
+            nested_count = len(re.match("^(\[+)", type_desc).group(1))
+
+            matched = re.match(r"(V|Z|B|C|D|F|S|I|J|L(.*?);)", type_desc[nested_count:])
             if not matched:
                 return None
 
-            tail_call = JavaType.parse_multiple(type_desc[1 + len(matched.group(1)) :])
+            tail_call = JavaType.parse_multiple(
+                type_desc[nested_count + len(matched.group(1)) :]
+            )
             if tail_call is None:
                 return None
 
             if matched.group(1)[0] != "L":
+                t = type_desc_to_java_type[matched.group(1)]()
+                for _ in range(nested_count):
+                    t = JavaTypeArray(t)
+
                 return [
-                    JavaTypeArray(type_desc_to_java_type[matched.group(1)]()),
+                    t,
                     *tail_call,
                 ]
 
             if matched.group(2) is None:
                 return None
 
-            return [JavaTypeArray(JavaTypeClass(matched.group(2))), *tail_call]
+            t = JavaTypeClass(matched.group(2))
+            for _ in range(nested_count):
+                t = JavaTypeArray(t)
+
+            return [t, *tail_call]
 
         matched = re.match(r"(V|Z|B|C|D|F|S|I|J|L(.*?);)", type_desc)
         if not matched:
