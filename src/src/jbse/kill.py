@@ -302,7 +302,7 @@ def get_inputs(
                     string += (
                         chr(string_conditions[i])
                         if string_conditions[i] != 0
-                        else "\\u0000"
+                        else "\u0000"
                     )
                 else:
                     string += "?"
