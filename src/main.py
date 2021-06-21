@@ -22,7 +22,7 @@ from src.util.z3_to_java import (
 
 
 curr_dir = os.getcwd()
-NUM_MODELS = 4
+NUM_MODELS = 1
 
 
 def main(target: str, methods: Sequence[str], num_models: int, debug: bool = False):
