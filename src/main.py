@@ -377,7 +377,6 @@ def get_inputs(
         return t.inner.binary_name == "java/lang/String"
 
     for param_name, param_type in params.items():
-
         def set_array_variables(name: str, type_desc: JavaType):
             if name in array_variables:
                 return
@@ -397,7 +396,11 @@ def get_inputs(
                 type(type_desc.inner) == JavaTypeClass
                 and type_desc.inner.binary_name == "java/lang/String"
             ):
-                pass
+                for key in symmap:
+                    child_name = ".".join(name for _, name in key)
+                    matched = re.match(rf"^{re.escape(name)}\[(\d+)\]", child_name)
+                    if matched:
+                        string_variables.append(f"{name}[{matched.group(1)}]")
 
         # array
         if is_primitive_array(param_type):
@@ -503,7 +506,30 @@ def get_inputs(
 
             # array of strings
             elif inner_type == JavaTypeClass:
-                raise NotImplementedError
+                array_conditions = {}
+
+                for var, val in cases.items():
+                    matched = re.match(rf"^{re.escape(array_variable)}\[(\d+)\]$", var)
+                    if matched:
+                        consumed_variables.append(var)
+                        array_conditions[int(matched.group(1))] = val
+
+                if f"{array_variable}.length" not in model_variables:
+                    length = max(list(array_conditions) + [0])
+
+                else:
+                    val = model_variables[f"{array_variable}.length"]
+                    consumed_variables.append(f"{array_variable}.length")
+                    length = int(val.params()[0])
+
+                array = []
+                for i in range(length):
+                    if i in array_conditions:
+                        array.append(array_conditions[i])
+                    else:
+                        array.append("")
+
+                cases[array_variable] = array
 
             # array of primitives
             else:
