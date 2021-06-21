@@ -262,6 +262,8 @@ if __name__ == "__main__":
             pprint.pprint(finder.kill_conditions)
             pprint.pprint(finder.unknown_conditions)
 
+            print("\nJUnit tests:\n")
+
         print(
             "\n\n".join(
                 [
