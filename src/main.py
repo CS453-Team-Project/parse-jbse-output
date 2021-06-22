@@ -6,7 +6,7 @@ from typing import Optional, Tuple, Sequence
 import pprint
 import z3
 from glob import glob
-from src.jbse.junit import inputs_to_junits
+from src.java.junit import inputs_to_junits
 from src.jbse.kill import KillConditionFinder
 
 from src.jbse.path import JBSEPath, JBSEPathAux
