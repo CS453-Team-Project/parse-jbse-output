@@ -92,7 +92,7 @@ class JBSEPath:
         symmgr = JBSESymbolManager()
 
         # pathname
-        pathname_pattern = r"((\.\d+)+\[\d+\])\s*\r?\nLeaf state"
+        pathname_pattern = r"((\.\d+)+\[\d+\])\s*\r?\n"
         matched = re.search(pathname_pattern, string)
         if matched is None:
             print(string)
@@ -100,7 +100,7 @@ class JBSEPath:
         pathname = matched.group(1)
 
         # symbol map
-        symmap_pattern = r"where:\s*\r?\n((.|\r|\n)*?)\r?\nStatic store:"
+        symmap_pattern = r"where:\s*\r?\n((.|\r|\n)*?)\r?\n\w"
         matched = re.search(symmap_pattern, string)
         if matched is None:
             raise ValueError("Improper input")
